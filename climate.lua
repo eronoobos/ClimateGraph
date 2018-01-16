@@ -30,11 +30,13 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 	a.superRegionsByName = {}
 	a.subRegionsByCode = {}
 	a.superRegionsByCode = {}
+	a.comboRegions = {}
 	if subRegions then
 		for i, region in pairs(subRegions) do
 			region.isSub = true
 			region.area = 0
 			region.latitudeArea = 0
+			region.targetFraction = region.targetArea
 			region.targetLatitudeArea = region.targetArea * a.totalLatitudes
 			region.targetArea = region.targetArea * 10000
 			a.regionsByName[region.name] = region
@@ -46,6 +48,7 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 		for i, region in pairs(regions) do
 			region.area = 0
 			region.latitudeArea = 0
+			region.targetFraction = region.targetArea
 			region.targetLatitudeArea = region.targetArea * a.totalLatitudes
 			region.targetArea = region.targetArea * 10000
 			region.isSub = false
@@ -66,9 +69,25 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 	end
 	for i, region in pairs(a.regions) do
 		region.subRegions = {}
+		region.comboRegions = {}
 		for ii, subRegionName in pairs(region.subRegionNames) do
-			if a.regionsByName[subRegionName] then
-				region.subRegions[a.regionsByName[subRegionName]] = true
+			local subRegion = a.regionsByName[subRegionName]
+			if subRegion then
+				region.subRegions[subRegion] = true
+				local comboRegion = {
+					region = region,
+					subRegion = subRegion,
+					area = 0,
+					latitudeArea = 0,
+					targetArea = subRegion.targetArea / #subRegion.containedBy,
+					targetLatitudeArea = subRegion.targetLatitudeArea / #subRegion.containedBy,
+					isCombo = true
+				}
+				tInsert(a.comboRegions, comboRegion)
+				region.comboRegions[subRegion] = comboRegion
+				if subRegionName ~= "none" then
+					a.regionsByName[region.name .. ':' .. subRegion.name] = comboRegion
+				end
 			end
 		end
 	end

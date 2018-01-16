@@ -1,29 +1,8 @@
 require "common"
 require "climate"
 
--- local TerrainDictionary = {
--- 	[terrainGrass] = { points = {}, features = { featureNone, featureForest, featureJungle, featureMarsh, featureFallout } },
--- 	[terrainPlains] = { points = {}, features = { featureNone, featureForest, featureFallout } },
--- 	[terrainDesert] = { points = {}, features = { featureNone, featureOasis, featureFallout }, specialFeature = featureOasis },
--- 	[terrainTundra] = { points = {}, features = { featureNone, featureForest, featureFallout } },
--- 	[terrainSnow] = { points = {}, features = { featureNone, featureFallout } },
--- }
-
--- local FeatureDictionary = {
--- 	[featureNone] = { points = {}, percent = 100, limitRatio = -1, hill = true },
--- 	[featureForest] = { points = {}, percent = 100, limitRatio = 0.85, hill = true },
--- 	[featureJungle] = { points = {}, percent = 100, limitRatio = 0.85, hill = true, terrainType = terrainPlains },
--- 	[featureMarsh] = { points = {}, percent = 100, limitRatio = 0.33, hill = false },
--- 	[featureOasis] = { points = {}, percent = 2.4, limitRatio = 0.01, hill = false },
--- 	[featureFallout] = { points = {}, disabled = true, percent = 0, limitRatio = 0.75, hill = true },
--- }
-
 local terrainRegions = {
 	{ name = "grassland", dictName = "terrainGrass", code = 0, targetArea = 0.36, highT = true, highR = true, noLowR = true, noLowT = true,
-		points = {
-			-- {t = 100, r = 75},
-			{t = 75, r = 100}
-		},
 		relations = {
 			-- plains = {t = 1, r = 1},
 			desert = {t = -1, r = 1},
@@ -34,10 +13,6 @@ local terrainRegions = {
 		color = {0, 127, 0}
 	},
 	{ name = "plains", dictName = "terrainPlains", code = 1, targetArea = 0.26, noLowT = true, noLowR = true,
-		points = {
-			-- {t = 75, r = 50},
-			{t = 50, r = 75}
-		},
 		relations = {
 			-- grassland = {t = -1, r = -1},
 			desert = {r = 1},
@@ -48,10 +23,6 @@ local terrainRegions = {
 		color = {127, 127, 0}
 	},
 	{ name = "desert", dictName = "terrainDesert", code = 2, targetArea = 0.195, lowR = true, noHighR = true,
-		points = {
-			-- {t = 25, r = 0},
-			{t = 80, r = 0}
-		},
 		relations = {
 			plains = {r = -1},
 			tundra = {t = 1},
@@ -62,10 +33,6 @@ local terrainRegions = {
 		color = {127, 127, 63}
 	},
 	{ name = "tundra", dictName = "terrainTundra", code = 3, targetArea = 0.13, contiguous = true, noHighT = true,
-		points = {
-			{t = 3, r = 25},
-			-- {t = 1, r = 75}
-		},
 		relations = {
 			desert = {t = -1},
 			plains = {t = -1},
@@ -77,10 +44,6 @@ local terrainRegions = {
 		color = {63, 63, 63}
 	},
 	{ name = "snow", dictName = "terrainSnow", code = 4, targetArea = 0.065, lowT = true, contiguous = true, noHighT = true,
-		points = {
-			{t = 0, r = 25},
-			-- {t = 0, r = 70},
-		},
 		subRegionNames = {"none"},
 		remainderString = "features = { featureNone, featureFallout }",
 		relations = {
@@ -95,10 +58,6 @@ local terrainRegions = {
 
 local featureRegions = {
 	{ name = "none", dictName = "featureNone", code = -1, targetArea = 0.73,
-		points = {
-			{t = 60, r = 40},
-			-- {t = 55, r = 45},
-		},
 		relations = {},
 		containedBy = { "grassland", "plains", "desert", "tundra", "snow" },
 		dontEqualizeSuperAreas = true,
@@ -106,20 +65,12 @@ local featureRegions = {
 		color = {255, 255, 255, 0}
 	},
 	{ name = "forest", dictName = "featureForest", code = 5, targetArea = 0.17, highR = true, noLowR = true,
-		points = {
-			{t = 45, r = 60},
-			-- {t = 25, r = 40},
-		},
 		relations = {},
 		containedBy = { "grassland", "plains", "tundra" },
 		remainderString = "percent = 100, limitRatio = 0.85, hill = true",
 		color = {0, 127, 127, 255}
 	},
 	{ name = "jungle", dictName = "featureJungle", code = 1, targetArea = 0.1, highR = true, highT = true, noLowR = true, noLowT = true,
-		points = {
-			{t = 100, r = 100},
-			-- {t = 90, r = 90},
-		},
 		containedBy = { "grassland" },
 		remainderString = "percent = 100, limitRatio = 0.85, hill = true, terrainType = terrainPlains",
 		relations = {},
@@ -196,10 +147,14 @@ function love.keyreleased(key)
 		brushRadius = mMin(25, brushRadius + 1)
 		brush = CreateBrush(brushRadius)
 		print(brushRadius)
+		local t, r = DisplayToGrid(love.mouse.getX(), love.mouse.getY())
+		brushHighlight = myClimate.graph:PaintRegion(nil, t, r, brush)
 	elseif key == '-' or key == '_' then
 		brushRadius = mMax(0, brushRadius - 1)
 		brush = CreateBrush(brushRadius)
 		print(brushRadius)
+		local t, r = DisplayToGrid(love.mouse.getX(), love.mouse.getY())
+		brushHighlight = myClimate.graph:PaintRegion(nil, t, r, brush)
 	elseif key == "space" then
 		paused = not paused
 	elseif key == "up" then
@@ -288,6 +243,7 @@ end
 
 function love.draw()
 	love.graphics.setLineWidth(1)
+	love.graphics.setLineStyle("rough")
 	for t, rains in pairs(myClimate.graph.grid) do
 		for r, pixel in pairs(rains) do
 			local x, y = t*displayMult, displayMultHundred-r*displayMult
@@ -312,14 +268,24 @@ function love.draw()
 	for name, region in pairs(myClimate.regionsByName) do
 		if brushRegion == region then
 			love.graphics.setColor( 255, 255, 255 )
+		elseif region.isCombo then
+			love.graphics.setColor( 255, 127, 127 )
 		elseif region.isSub then
 			love.graphics.setColor( 255, 127, 255 )
 		else
 			love.graphics.setColor( 127, 255, 255 )
 		end
-		love.graphics.print(region.name .. "\n" .. (region.latitudeArea or "nil") .. "/" .. mFloor(region.targetLatitudeArea) .. "\n" .. (region.area or "nil") .. "/" .. mFloor(region.targetArea) .. "\n", displayMultHundred+70, y)
-		love.graphics.setColor(region.color)
-		love.graphics.rectangle("fill", displayMultHundred+25, y, 30, 30)
+		love.graphics.print(name .. "\n" .. (region.latitudeArea or "nil") .. "/" .. mCeil(region.targetLatitudeArea) .. "\n" .. (region.area or "nil") .. "/" .. mFloor(region.targetArea) .. "\n", displayMultHundred+70, y)
+		if region.isCombo then
+			love.graphics.setColor(region.region.color)
+			love.graphics.rectangle("fill", displayMultHundred+25, y, 30, 30)
+			love.graphics.setColor(region.subRegion.color)
+			love.graphics.rectangle("fill", displayMultHundred+25, y, 15, 15)
+			love.graphics.rectangle("fill", displayMultHundred+25+15, y+15, 15, 15)
+		else
+			love.graphics.setColor(region.color)
+			love.graphics.rectangle("fill", displayMultHundred+25, y, 30, 30)
+		end
 		y = y + 50
 	end
 	love.graphics.setColor(255, 0, 0)
