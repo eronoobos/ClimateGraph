@@ -68,6 +68,14 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 			end
 		end
 	end
+	for i, subRegion in pairs(subRegions) do
+		subRegion.superRegions = {}
+		for ii, regionName in pairs(subRegion.containedBy) do
+			if a.regionsByName[regionName] then
+				subRegion.superRegions[a.regionsByName[regionName]] = true
+			end
+		end
+	end
 
 	local protoLatitudes = {}
 	for l = 0, mFloor(90/latitudeResolution) do

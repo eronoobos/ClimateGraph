@@ -14,6 +14,7 @@ end)
 function Pixel:SetRegion(region)
 	local myRegion
 	if region.isSub then
+		if not region.superRegions[self.region] then return end
 		myRegion = self.subRegion
 	else
 		myRegion = self.region
@@ -29,5 +30,8 @@ function Pixel:SetRegion(region)
 		self.subRegion = region
 	else
 		self.region = region
+		if not region.subRegions[self.subRegion] then
+			self:SetRegion(self.climate.regionsByName["none"])
+		end
 	end
 end

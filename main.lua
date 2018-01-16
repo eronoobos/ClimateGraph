@@ -113,7 +113,7 @@ local featureRegions = {
 		relations = {},
 		containedBy = { "grassland", "plains", "tundra" },
 		remainderString = "percent = 100, limitRatio = 0.85, hill = true",
-		color = {0, 255, 255, 127}
+		color = {0, 127, 127, 255}
 	},
 	{ name = "jungle", dictName = "featureJungle", targetArea = 0.1, highR = true, highT = true, noLowR = true, noLowT = true,
 		points = {
@@ -123,7 +123,7 @@ local featureRegions = {
 		containedBy = { "grassland" },
 		remainderString = "percent = 100, limitRatio = 0.85, hill = true, terrainType = terrainPlains",
 		relations = {},
-		color = {0, 0, 255, 127}
+		color = {0, 0, 127, 255}
 	},
 	--[[
 	{ name = "marsh", targetArea = 0.02, highR = true,
@@ -330,7 +330,8 @@ function love.draw()
 			love.graphics.rectangle("fill", x+displayMultHalf, y+displayMultHalf, displayMultHalf, displayMultHalf)
 			if pixel.latitude then
 				love.graphics.setColor( 127, 0, 0 )
-				love.graphics.rectangle("fill", x, y, displayMult, displayMult)
+				love.graphics.rectangle("fill", x+displayMultHalf, y, displayMultHalf, displayMultHalf)
+				love.graphics.rectangle("fill", x, y+displayMultHalf, displayMultHalf, displayMultHalf)
 			end
 		end
 	end
