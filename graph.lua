@@ -26,6 +26,39 @@ function Graph:PixelAt(temp, rain)
 	return self.grid[temp][rain]
 end
 
+function Graph:Export()
+	local out = "return {\n"
+	for t, rains in ipairs(self.grid) do
+		out = out .. "\t{ " 
+		for r, pixel in ipairs(rains) do
+			out = out .. "{" .. pixel.region.code .. "," .. pixel.subRegion.code .. "}"
+			if r ~= #rains then
+				out = out .. ", "
+			end
+		end
+		out = out .. " }"
+		if t ~= #self.grid then
+			out = out .. ","
+		end
+		out = out .. "\n"
+	end
+	out = out .. "}"
+	return out
+end
+
+function Graph:Import(exGrid)
+	for t, rains in ipairs(exGrid) do
+		for r, p in ipairs(rains) do
+			local pixel = self.grid[t][r]
+			local region = self.climate.superRegionsByCode[p[1]]
+			local subRegion = self.climate.subRegionsByCode[p[2]]
+			pixel:SetRegion(region)
+			pixel:SetRegion(subRegion)
+		end
+	end
+	print("grid imported")
+end
+
 function Graph:PaintRegion(region, temp, rain, brush)
 	local list
 	if not region then list = {} end

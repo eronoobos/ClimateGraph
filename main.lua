@@ -19,7 +19,7 @@ require "climate"
 -- }
 
 local terrainRegions = {
-	{ name = "grassland", dictName = "terrainGrass", targetArea = 0.36, highT = true, highR = true, noLowR = true, noLowT = true,
+	{ name = "grassland", dictName = "terrainGrass", code = 0, targetArea = 0.36, highT = true, highR = true, noLowR = true, noLowT = true,
 		points = {
 			-- {t = 100, r = 75},
 			{t = 75, r = 100}
@@ -33,7 +33,7 @@ local terrainRegions = {
 		remainderString = "features = { featureNone, featureForest, featureJungle, featureMarsh, featureFallout }",
 		color = {0, 127, 0}
 	},
-	{ name = "plains", dictName = "terrainPlains", targetArea = 0.26, noLowT = true, noLowR = true,
+	{ name = "plains", dictName = "terrainPlains", code = 1, targetArea = 0.26, noLowT = true, noLowR = true,
 		points = {
 			-- {t = 75, r = 50},
 			{t = 50, r = 75}
@@ -47,7 +47,7 @@ local terrainRegions = {
 		remainderString = "features = { featureNone, featureForest, featureFallout }",
 		color = {127, 127, 0}
 	},
-	{ name = "desert", dictName = "terrainDesert", targetArea = 0.195, lowR = true, noHighR = true,
+	{ name = "desert", dictName = "terrainDesert", code = 2, targetArea = 0.195, lowR = true, noHighR = true,
 		points = {
 			-- {t = 25, r = 0},
 			{t = 80, r = 0}
@@ -61,7 +61,7 @@ local terrainRegions = {
 		remainderString = "features = { featureNone, featureOasis, featureFallout }, specialFeature = featureOasis",
 		color = {127, 127, 63}
 	},
-	{ name = "tundra", dictName = "terrainTundra", targetArea = 0.13, contiguous = true, noHighT = true,
+	{ name = "tundra", dictName = "terrainTundra", code = 3, targetArea = 0.13, contiguous = true, noHighT = true,
 		points = {
 			{t = 3, r = 25},
 			-- {t = 1, r = 75}
@@ -76,7 +76,7 @@ local terrainRegions = {
 		remainderString = "features = { featureNone, featureForest, featureFallout }",
 		color = {63, 63, 63}
 	},
-	{ name = "snow", dictName = "terrainSnow", targetArea = 0.065, lowT = true, contiguous = true, noHighT = true,
+	{ name = "snow", dictName = "terrainSnow", code = 4, targetArea = 0.065, lowT = true, contiguous = true, noHighT = true,
 		points = {
 			{t = 0, r = 25},
 			-- {t = 0, r = 70},
@@ -94,7 +94,7 @@ local terrainRegions = {
 -- 
 
 local featureRegions = {
-	{ name = "none", dictName = "featureNone", targetArea = 0.73,
+	{ name = "none", dictName = "featureNone", code = -1, targetArea = 0.73,
 		points = {
 			{t = 60, r = 40},
 			-- {t = 55, r = 45},
@@ -105,7 +105,7 @@ local featureRegions = {
 		remainderString = "percent = 100, limitRatio = -1, hill = true",
 		color = {255, 255, 255, 0}
 	},
-	{ name = "forest", dictName = "featureForest", targetArea = 0.17, highR = true, noLowR = true,
+	{ name = "forest", dictName = "featureForest", code = 5, targetArea = 0.17, highR = true, noLowR = true,
 		points = {
 			{t = 45, r = 60},
 			-- {t = 25, r = 40},
@@ -115,7 +115,7 @@ local featureRegions = {
 		remainderString = "percent = 100, limitRatio = 0.85, hill = true",
 		color = {0, 127, 127, 255}
 	},
-	{ name = "jungle", dictName = "featureJungle", targetArea = 0.1, highR = true, highT = true, noLowR = true, noLowT = true,
+	{ name = "jungle", dictName = "featureJungle", code = 1, targetArea = 0.1, highR = true, highT = true, noLowR = true, noLowT = true,
 		points = {
 			{t = 100, r = 100},
 			-- {t = 90, r = 90},
@@ -173,18 +173,15 @@ function love.keyreleased(key)
 	-- print(key)
 	local ascii = string.byte(key)
 	if key == "c" or key == "s" then
-		local output = ""
+		local output = myClimate.graph:Export()
 		if key == "c" then
-			-- save points to clipboard
+			-- save grid to clipboard
 			love.system.setClipboardText( output )
 		elseif key == "s" then
-			-- save points to file
-			local success = love.filesystem.write( "points.txt", output )
-			if success then print('points.txt written') end
+			-- save grid to file
+			local success = love.filesystem.write( "grid.lua", output )
+			if success then print('grid.lua written') end
 		end
-	elseif key == "o" then
-		local block = ""
-		love.system.setClipboardText( block )
 	elseif ascii >= 49 and ascii <= 57 then
 		-- numbers select regions to paint
 		local num = tonumber(key)
@@ -205,8 +202,6 @@ function love.keyreleased(key)
 		print(brushRadius)
 	elseif key == "space" then
 		paused = not paused
-	-- elseif key == "f" then
-		-- myClimate = Climate(nil, featureRegions, myClimate)
 	elseif key == "up" then
 		myClimate:SetPolarExponent(myClimate.polarExponent+0.1)
 	elseif key == "down" then
@@ -228,51 +223,24 @@ function love.keyreleased(key)
 	elseif key == "," then
 		myClimate:SetRainfallMidpoint(myClimate.rainfallMidpoint - 1)
 	elseif key == "l" or key == "v" then
-		-- load points from file
-		local lines
+		-- load grid from file
+		local chunk
 		if key == "l" then
-			if love.filesystem.exists( "points.txt" ) then
-				print('points.txt exists')
-				lines = {}
-				for line in love.filesystem.lines("points.txt") do
-					tInsert(lines, line)
-				end
+			if love.filesystem.exists( "grid.lua" ) then
+				print('grid.lua exists')
+				chunk = love.filesystem.load( "grid.lua" )
 			end
 		elseif key == "v" then
 			local clipText = love.system.getClipboardText()
-			lines = clipText:split("\n")
+			chunk = loadstring(clipText)
 		end
-		if lines then
-			myClimate.pointSet = PointSet(myClimate)
-			myClimate.subPointSet = PointSet(myClimate, nil, true)
-			for i, line in pairs(lines) do
-				local words = splitIntoWords(line)
-				if #words > 1 then
-					local regionName = words[1]
-					local tr = {}
-					for i, n in pairs(words[2]:split(",")) do tInsert(tr, n) end
-					if #tr > 1 then
-						local t, r = tonumber(tr[1]), tonumber(tr[2])
-						print(regionName, t, r, type(regionName), type(t), type(r))
-						local region = myClimate.subRegionsByName[regionName] or myClimate.superRegionsByName[regionName]
-						local pointSet
-						if region then
-							print('got region')
-							if myClimate.subRegionsByName[regionName] then
-								pointSet = myClimate.subPointSet
-								print("sub")
-							elseif myClimate.superRegionsByName[regionName] then
-								pointSet = myClimate.pointSet
-								print("super")
-							end
-							local point = Point(region, t, r)
-							pointSet:AddPoint(point)
-						end
-					end
-				end
+		if chunk then
+			print("got chunk")
+			local grid = chunk()
+			if grid then
+				print("got grid table")
+				myClimate.graph:Import(grid)
 			end
-			print('points loaded')
-			print(#myClimate.pointSet.points, #myClimate.subPointSet.points)
 		end
 	end
 end

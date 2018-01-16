@@ -28,6 +28,8 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 	a.regionsByName = {}
 	a.subRegionsByName = {}
 	a.superRegionsByName = {}
+	a.subRegionsByCode = {}
+	a.superRegionsByCode = {}
 	if subRegions then
 		for i, region in pairs(subRegions) do
 			region.isSub = true
@@ -37,6 +39,7 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 			region.targetArea = region.targetArea * 10000
 			a.regionsByName[region.name] = region
 			a.subRegionsByName[region.name] = region
+			a.subRegionsByCode[region.code] = region
 		end
 	end
 	if regions then
@@ -48,6 +51,7 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 			region.isSub = false
 			a.regionsByName[region.name] = region
 			a.superRegionsByName[region.name] = region
+			a.superRegionsByCode[region.code] = region
 		end
 		a.graph = Graph(a, regions[1], subRegions[1])
 	elseif parentClimate then
