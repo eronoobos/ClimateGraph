@@ -7,6 +7,8 @@ Pixel = class(function(a, graph, temp, rain, region, subRegion, latitude)
 	a.region = region
 	a.subRegion = subRegion
 	a.latitude = latitude
+
+	a.climate = graph.climate
 end)
 
 function Pixel:SetRegionOrSubRegion(fieldString, region)

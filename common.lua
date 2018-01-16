@@ -72,6 +72,19 @@ function stringCapitalize(string)
 	return first .. string:sub(2)
 end
 
+function CreateBrush(radius)
+  local brush = {}
+  local radiusSq = radius * radius
+  for x = 0, radius do
+    for y = 0, radius do
+      if not (y == 0 and x == 0) and x*x + y*y <= radiusSq then
+        tInsert(brush, {x=x,y=y})
+      end
+    end
+  end
+  return brush
+end
+
 function serialize(o, out)
   out = out or ""
   if type(o) == "number" then

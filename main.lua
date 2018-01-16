@@ -157,23 +157,22 @@ nullFeatureRegions = {
 }
 
 local myClimate
+local brushRegion
+local brushRadius = 3
+local brush = CreateBrush(brushRadius)
 local paused
 
 function love.load()
     love.window.setMode(displayMult * 100 + 200, displayMult * 100 + 100, {resizable=false, vsync=false})
     myClimate = Climate(terrainRegions, nullFeatureRegions)
+    brushRegion = myClimate.regions[1]
 end
 
 function love.keyreleased(key)
-	print(key)
+	-- print(key)
+	local ascii = string.byte(key)
 	if key == "c" or key == "s" then
 		local output = ""
-		for i, point in pairs(myClimate.pointSet.points) do
-			output = output .. point.region.name .. " " .. point.t .. "," .. point.r .. "\n"
-		end
-		for i, point in pairs(myClimate.subPointSet.points) do
-			output = output .. point.region.name .. " " .. point.t .. "," .. point.r .. "\n"
-		end
 		if key == "c" then
 			-- save points to clipboard
 			love.system.setClipboardText( output )
@@ -183,34 +182,18 @@ function love.keyreleased(key)
 			if success then print('points.txt written') end
 		end
 	elseif key == "o" then
-		-- [terrainGrass] = { points = {{t=47,r=76}, {t=73,r=58}}, features = { featureNone, featureForest, featureJungle, featureMarsh, featureFallout } },
-		local block = "TerrainDictionary = {\n"
-		for r, region in pairs(myClimate.regions) do
-			local pointList = ""
-			for i, point in pairs(myClimate.pointSet.points) do
-				if point.region == region then
-					pointList = pointList .. "{t=" .. point.t .. ",r=" .. point.r .. "}," 
-				end
-			end
-			block = block .. '\t[' .. region.dictName .. '] = { points = {' .. pointList .. '}, ' .. region.remainderString .. " },\n"
-		end
-		block = block .. "}\n\n"
-		block = block .. "FeatureDictionary = {\n"
-		for r, region in pairs(myClimate.subRegions) do
-			local pointList = ""
-			for i, point in pairs(myClimate.subPointSet.points) do
-				if point.region == region then
-					pointList = pointList .. "{t=" .. point.t .. ",r=" .. point.r .. "}," 
-				end
-			end
-			block = block .. '\t[' .. region.dictName .. '] = { points = {' .. pointList .. '}, ' .. region.remainderString .. " },\n"
-		end
-		block = block .. [[
-	[featureMarsh] = { points = {}, percent = 100, limitRatio = 0.33, hill = false },
-	[featureOasis] = { points = {}, percent = 2.4, limitRatio = 0.01, hill = false },
-	[featureFallout] = { points = {{t=50,r=0}}, disabled = true, percent = 0, limitRatio = 0.75, hill = true },]]
-		block = block .. "\n}"
+		local block = ""
 		love.system.setClipboardText( block )
+	elseif ascii >= 49 and ascii <= 57 then
+		-- numbers select regions to paint
+		local num = tonumber(key)
+		if num <= 5 then
+			brushRegion = myClimate.regions[num] or brushRegion
+		else
+			num = num - 5
+			brushRegion = myClimate.subRegions[num] or brushRegion
+		end
+		print(brushRegion.name)
 	elseif key == "space" then
 		paused = not paused
 	elseif key == "f" then
@@ -287,62 +270,32 @@ end
 
 local buttonPointSets = { 'pointSet', 'subPointSet' }
 local mousePress = {}
-local mousePoint = {}
-local mousePointOriginalPosition = {}
 
 function love.mousepressed(x, y, button)
-	print("mouse pressed", x, y, button)
-	if buttonPointSets[button] then
-		print("mouse has command")
-		local t, r = DisplayToGrid(x, y)
-		local pointSet = myClimate[buttonPointSets[button]]
-		local point = pointSet:NearestPoint(t, r)
-		if not point then
-			print("no point under mouse")
-			return
-		end
-		if love.keyboard.isDown( 'lctrl' ) then
-			if love.keyboard.isDown( 'lshift' ) then
-				-- delete a point
-				for i = #point.pointSet.points, 1, -1 do
-					if point.pointSet.points[i] == point then
-						tRemove(point.pointSet.points, i)
-						break
-					end
-				end
-			else
-				-- insert a point
-				local insertPoint = Point(point.region, t, r)
-				pointSet:AddPoint(insertPoint)
-			end
-			pointSet:Fill()
-			if pointSet.isSub then
-				regions = myClimate.subRegions
-			else
-				regions = myClimate.regions
-			end
-			myClimate:GiveRegionsExcessAreas(regions)
-			pointSet:GiveDistance()
-		elseif love.keyboard.isDown('lalt') then
-			-- fix or unfix the point
-			point.fixed = not point.fixed
-		else
-			print("dragging point")
-			mousePoint[button] = point
-			mousePointOriginalPosition[button] = { t = point.t, r = point.r }
-			point.fixed = true
-		end
+	local t, r = DisplayToGrid(x, y)
+	if love.keyboard.isDown( 'lctrl' ) then
+		-- select a region to paint by clicking on it
+	else
+		-- paint region
+		myClimate.graph:PaintRegion(brushRegion, t, r, brush)
 	end
 	mousePress[button] = {x = x, y = y}
 end
 
 function love.mousereleased(x, y, button)
-	if mousePoint[button] then
-		mousePoint[button].fixed = false
-	end
-	mousePoint[button] = nil
 	mousePress[button] = nil
-	mousePointOriginalPosition[button] = nil
+end
+
+function love.mousemoved(x, y, dx, dy, istouch)
+	for button, point in pairs(mousePress) do
+		local t, r = DisplayToGrid(x, y)
+		myClimate.graph:PaintRegion(brushRegion, t, r, brush)
+		-- local pressT, pressR = DisplayToGrid(mousePress[button].x, mousePress[button].y)
+	end
+end
+
+function love.update(dt)
+   love.window.setTitle( myClimate.iterations .. " " .. myClimate.generation .. " " .. mFloor(myClimate.distance or 0) .. myClimate.mutationStrength )
 end
 
 function love.draw()
@@ -373,16 +326,4 @@ function love.draw()
 	love.graphics.print(mFloor(myClimate.distance or "nil"), 10, displayMultHundred + 70)
 	love.graphics.setColor(255, 0, 255)
 	love.graphics.print("polar exponent: " .. myClimate.polarExponent .. "   minimum temperature: " .. myClimate.temperatureMin .. "   maximum temperature: " .. myClimate.temperatureMax .. "   rainfall midpoint: " .. myClimate.rainfallMidpoint, 10, displayMultHundred + 50)
-end
-
-function love.update(dt)
-	for button, point in pairs(mousePoint) do
-		local curT, curR = DisplayToGrid(love.mouse.getX(), love.mouse.getY())
-		local pressT, pressR = DisplayToGrid(mousePress[button].x, mousePress[button].y)
-		local dt = curT - pressT
-		local dr = curR - pressR
-		point.t = mMax(0, mMin(100, mousePointOriginalPosition[button].t + dt))
-		point.r = mMax(0, mMin(100, mousePointOriginalPosition[button].r + dr))
-	end
-   love.window.setTitle( myClimate.iterations .. " " .. myClimate.generation .. " " .. mFloor(myClimate.distance or 0) .. myClimate.mutationStrength )
 end

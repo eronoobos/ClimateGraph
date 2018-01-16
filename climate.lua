@@ -28,6 +28,17 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 	a.regionsByName = {}
 	a.subRegionsByName = {}
 	a.superRegionsByName = {}
+	if subRegions then
+		for i, region in pairs(subRegions) do
+			region.isSub = true
+			region.area = 0
+			region.latitudeArea = 0
+			region.targetLatitudeArea = region.targetArea * a.totalLatitudes
+			region.targetArea = region.targetArea * 10000
+			a.regionsByName[region.name] = region
+			a.subRegionsByName[region.name] = region
+		end
+	end
 	if regions then
 		for i, region in pairs(regions) do
 			region.area = 0
@@ -38,7 +49,7 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 			a.regionsByName[region.name] = region
 			a.superRegionsByName[region.name] = region
 		end
-		a.graph = Graph(regions[1], subRegions[1])
+		a.graph = Graph(a, regions[1], subRegions[1])
 	elseif parentClimate then
 		a.generation = parentClimate.generation + 1
 		a.distance = parentClimate.distance
@@ -47,17 +58,6 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 		a.superRegionsByName = parentClimate.superRegionsByName
 		for i, region in pairs(parentClimate.regions) do
 			a.regionsByName[region.name] = region
-		end
-	end
-	if subRegions then
-		for i, region in pairs(subRegions) do
-			region.isSub = true
-			region.area = 0
-			region.latitudeArea = 0
-			region.targetLatitudeArea = region.targetArea * a.totalLatitudes
-			region.targetArea = region.targetArea * 10000
-			a.regionsByName[region.name] = region
-			a.subRegionsByName[region.name] = region
 		end
 	end
 	for i, region in pairs(a.regions) do
