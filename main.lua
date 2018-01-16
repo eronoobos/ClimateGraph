@@ -346,21 +346,18 @@ function love.mousereleased(x, y, button)
 end
 
 function love.draw()
-	for t, rains in pairs(myClimate.pointSet.grid) do
-		for r, point in pairs(rains) do
-			love.graphics.setColor( point.region.color )
-			love.graphics.rectangle("fill", t*displayMult, displayMultHundred-r*displayMult, displayMult, displayMult)
+	for t, rains in pairs(myClimate.graph.grid) do
+		for r, pixel in pairs(rains) do
+			local x, y = t*displayMult, displayMultHundred-r*displayMult
+			love.graphics.setColor( pixel.region.color )
+			love.graphics.rectangle("fill", x, y, displayMult, displayMult)
+			love.graphics.setColor( pixel.subRegion.color )
+			love.graphics.rectangle("fill", x, y, displayMult, displayMult)
+			if pixel.latitude then
+				love.graphics.setColor( 127, 0, 0 )
+				love.graphics.rectangle("fill", x, y, displayMult, displayMult)
+			end
 		end
-	end
-	for t, rains in pairs(myClimate.subPointSet.grid) do
-		for r, point in pairs(rains) do
-			love.graphics.setColor( point.region.color )
-			love.graphics.rectangle("fill", t*displayMult, displayMultHundred-r*displayMult, displayMult, displayMult)
-		end
-	end
-	love.graphics.setColor( 127, 0, 0 )
-	for latitude, values in pairs(myClimate.pseudoLatitudes) do
-		love.graphics.rectangle("fill", values.temperature*displayMult, displayMultHundred-values.rainfall*displayMult, displayMult, displayMult)
 	end
 	local y = 0
 	for name, region in pairs(myClimate.regionsByName) do
@@ -369,31 +366,11 @@ function love.draw()
 		else
 			love.graphics.setColor( 127, 255, 255 )
 		end
-		love.graphics.print(region.name .. "\n" .. (region.stableLatitudeArea or "nil") .. "/" .. mFloor(region.targetLatitudeArea) .. "\n" .. (region.stableArea or "nil") .. "/" .. mFloor(region.targetArea) .. "\n", displayMultHundred+70, y)
+		love.graphics.print(region.name .. "\n" .. (region.latitudeArea or "nil") .. "/" .. mFloor(region.targetLatitudeArea) .. "\n" .. (region.area or "nil") .. "/" .. mFloor(region.targetArea) .. "\n", displayMultHundred+70, y)
 		y = y + 50
 	end
-	for i, point in pairs(myClimate.pointSet.points) do
-		love.graphics.setColor( 255, 255, 255 )
-		love.graphics.rectangle("fill", point.t*displayMult, displayMultHundred-point.r*displayMult, displayMult, displayMult)
-		if point.fixed then
-			love.graphics.setColor( 255, 0, 255 )
-		else
-			love.graphics.setColor( 255, 255, 255 )
-		end
-		love.graphics.print( point.region.name .. "\n" .. (point.latitudeArea or "nil") .. "\n" .. (point.area or "nil") .. "\n" .. point.t .. "," .. point.r .. "\n" .. mFloor(point.tMove or 0) .. "," .. mFloor(point.rMove or 0), point.t*displayMult, displayMultHundred-point.r*displayMult)
-	end
-	for i, point in pairs(myClimate.subPointSet.points) do
-		love.graphics.setColor( 0, 0, 0 )
-		love.graphics.rectangle("fill", point.t*displayMult, displayMultHundred-point.r*displayMult, displayMult, displayMult)
-		if point.fixed then
-			love.graphics.setColor( 255, 0, 255 )
-		else
-			love.graphics.setColor( 255, 255, 255 )
-		end
-		love.graphics.print( point.region.name .. "\n" .. (point.latitudeArea or "nil") .. "\n" .. (point.area or "nil") .. "\n" .. point.t .. "," .. point.r .. "\n" .. mFloor(point.tMove or 0) .. "," .. mFloor(point.rMove or 0), point.t*displayMult, displayMultHundred-point.r*displayMult)
-	end
 	love.graphics.setColor(255, 0, 0)
-	love.graphics.print(mFloor(myClimate.pointSet.distance or "nil") .. " " .. mFloor(myClimate.subPointSet.distance or "nil"), 10, displayMultHundred + 70)
+	love.graphics.print(mFloor(myClimate.distance or "nil"), 10, displayMultHundred + 70)
 	love.graphics.setColor(255, 0, 255)
 	love.graphics.print("polar exponent: " .. myClimate.polarExponent .. "   minimum temperature: " .. myClimate.temperatureMin .. "   maximum temperature: " .. myClimate.temperatureMax .. "   rainfall midpoint: " .. myClimate.rainfallMidpoint, 10, displayMultHundred + 50)
 end
@@ -407,10 +384,5 @@ function love.update(dt)
 		point.t = mMax(0, mMin(100, mousePointOriginalPosition[button].t + dt))
 		point.r = mMax(0, mMin(100, mousePointOriginalPosition[button].r + dr))
 	end
-	if paused then
-		myClimate:Fill()
-	else
-		myClimate:Optimize()
-	end
-   love.window.setTitle( myClimate.iterations .. " " .. myClimate.pointSet.generation .. " " .. mFloor(myClimate.pointSet.distance or 0) .. " (" .. myClimate.subPointSet.generation .. " " .. mFloor(myClimate.subPointSet.distance or 0) ..") " .. myClimate.mutationStrength )
+   love.window.setTitle( myClimate.iterations .. " " .. myClimate.generation .. " " .. mFloor(myClimate.distance or 0) .. myClimate.mutationStrength )
 end
