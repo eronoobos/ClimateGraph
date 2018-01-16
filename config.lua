@@ -15,4 +15,5 @@ subPointSetDistanceIncreaseTolerance = 1.0 -- (times its distance)
 latitudeResolution = 0.1
 
 displayMult = 6
+displayMultHalf = displayMult / 2
 displayMultHundred = displayMult * 100

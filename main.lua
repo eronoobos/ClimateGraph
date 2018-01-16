@@ -113,7 +113,7 @@ local featureRegions = {
 		relations = {},
 		containedBy = { "grassland", "plains", "tundra" },
 		remainderString = "percent = 100, limitRatio = 0.85, hill = true",
-		color = {255, 255, 0, 127}
+		color = {0, 255, 255, 127}
 	},
 	{ name = "jungle", dictName = "featureJungle", targetArea = 0.1, highR = true, highT = true, noLowR = true, noLowT = true,
 		points = {
@@ -123,7 +123,7 @@ local featureRegions = {
 		containedBy = { "grassland" },
 		remainderString = "percent = 100, limitRatio = 0.85, hill = true, terrainType = terrainPlains",
 		relations = {},
-		color = {0, 255, 0, 127}
+		color = {0, 0, 255, 127}
 	},
 	--[[
 	{ name = "marsh", targetArea = 0.02, highR = true,
@@ -160,6 +160,7 @@ local myClimate
 local brushRegion
 local brushRadius = 4
 local brush = CreateBrush(brushRadius)
+local brushHighlight = {}
 local paused
 
 function love.load()
@@ -281,8 +282,18 @@ local mousePress = {}
 
 function love.mousepressed(x, y, button)
 	local t, r = DisplayToGrid(x, y)
-	if love.keyboard.isDown( 'lctrl' ) then
+	if love.keyboard.isDown( 'lctrl' ) or love.keyboard.isDown( 'rctrl' ) then
 		-- select a region to paint by clicking on it
+		local pixel = myClimate.graph:PixelAt(t, r)
+		if pixel then
+			if button == 1 then
+				-- select region
+				brushRegion = pixel.region
+			elseif button == 2 then
+				-- select subregion
+				brushRegion = pixel.subRegion
+			end
+		end
 	else
 		-- paint region
 		myClimate.graph:PaintRegion(brushRegion, t, r, brush)
@@ -295,8 +306,9 @@ function love.mousereleased(x, y, button)
 end
 
 function love.mousemoved(x, y, dx, dy, istouch)
+	local t, r = DisplayToGrid(x, y)
+	brushHighlight = myClimate.graph:PaintRegion(nil, t, r, brush)
 	for button, point in pairs(mousePress) do
-		local t, r = DisplayToGrid(x, y)
 		myClimate.graph:PaintRegion(brushRegion, t, r, brush)
 		-- local pressT, pressR = DisplayToGrid(mousePress[button].x, mousePress[button].y)
 	end
@@ -307,31 +319,44 @@ function love.update(dt)
 end
 
 function love.draw()
+	love.graphics.setLineWidth(1)
 	for t, rains in pairs(myClimate.graph.grid) do
 		for r, pixel in pairs(rains) do
 			local x, y = t*displayMult, displayMultHundred-r*displayMult
 			love.graphics.setColor( pixel.region.color )
 			love.graphics.rectangle("fill", x, y, displayMult, displayMult)
 			love.graphics.setColor( pixel.subRegion.color )
-			love.graphics.rectangle("fill", x, y, displayMult, displayMult)
+			love.graphics.rectangle("fill", x, y, displayMultHalf, displayMultHalf)
+			love.graphics.rectangle("fill", x+displayMultHalf, y+displayMultHalf, displayMultHalf, displayMultHalf)
 			if pixel.latitude then
 				love.graphics.setColor( 127, 0, 0 )
 				love.graphics.rectangle("fill", x, y, displayMult, displayMult)
 			end
 		end
 	end
+	for h, pixel in pairs(brushHighlight) do
+		local x, y = pixel.temp*displayMult, displayMultHundred-pixel.rain*displayMult
+		love.graphics.setColor( 0, 0, 0 )
+		love.graphics.rectangle("line", x, y, displayMult, displayMult)
+	end
 	local y = 0
 	for name, region in pairs(myClimate.regionsByName) do
-		if region.containedBy then
-			love.graphics.setColor( 255, 255, 127 )
+		if brushRegion == region then
+			love.graphics.setColor( 255, 255, 255 )
+		elseif region.isSub then
+			love.graphics.setColor( 255, 127, 255 )
 		else
 			love.graphics.setColor( 127, 255, 255 )
 		end
 		love.graphics.print(region.name .. "\n" .. (region.latitudeArea or "nil") .. "/" .. mFloor(region.targetLatitudeArea) .. "\n" .. (region.area or "nil") .. "/" .. mFloor(region.targetArea) .. "\n", displayMultHundred+70, y)
+		love.graphics.setColor(region.color)
+		love.graphics.rectangle("fill", displayMultHundred+25, y, 30, 30)
 		y = y + 50
 	end
 	love.graphics.setColor(255, 0, 0)
 	love.graphics.print(mFloor(myClimate.distance or "nil"), 10, displayMultHundred + 70)
 	love.graphics.setColor(255, 0, 255)
 	love.graphics.print("polar exponent: " .. myClimate.polarExponent .. "   minimum temperature: " .. myClimate.temperatureMin .. "   maximum temperature: " .. myClimate.temperatureMax .. "   rainfall midpoint: " .. myClimate.rainfallMidpoint, 10, displayMultHundred + 50)
+	love.graphics.setColor(0, 0, 0)
+	-- love.graphics.circle("line", love.mouse.getX(), love.mouse.getY()+displayMult, (brushRadius+0.5)*displayMult, mMax(12,6*brushRadius))
 end
