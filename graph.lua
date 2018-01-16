@@ -22,16 +22,13 @@ end)
 
 function Graph:PixelAt(temp, rain)
 	-- print(temp, rain, self.grid, self.grid[temp])
+	if not self.grid[temp] then return end
 	return self.grid[temp][rain]
 end
 
-function Graph:PaintRegion(region, temp, rain, brush, isSub)
+function Graph:PaintRegion(region, temp, rain, brush)
 	local pixel = self:PixelAt(temp, rain)
-	if isSub then
-		pixel:SetSubRegion(region)
-	else
-		pixel:SetRegion(region)
-	end
+	pixel:SetRegion(region)
 	if brush then
 		for b, bristle in pairs(brush) do
 			for mx = -1, 1, 2 do
@@ -39,11 +36,7 @@ function Graph:PaintRegion(region, temp, rain, brush, isSub)
 					local t = temp + (bristle.x * mx)
 					local r = rain + (bristle.y * my)
 					local p = self:PixelAt(t, r)
-					if isSub then
-						p:SetSubRegion(region)
-					else
-						p:SetRegion(region)
-					end
+					if p then p:SetRegion(region) end
 				end
 			end
 		end

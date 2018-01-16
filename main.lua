@@ -158,13 +158,13 @@ nullFeatureRegions = {
 
 local myClimate
 local brushRegion
-local brushRadius = 3
+local brushRadius = 4
 local brush = CreateBrush(brushRadius)
 local paused
 
 function love.load()
     love.window.setMode(displayMult * 100 + 200, displayMult * 100 + 100, {resizable=false, vsync=false})
-    myClimate = Climate(terrainRegions, nullFeatureRegions)
+    myClimate = Climate(terrainRegions, featureRegions)
     brushRegion = myClimate.regions[1]
 end
 
@@ -194,10 +194,18 @@ function love.keyreleased(key)
 			brushRegion = myClimate.subRegions[num] or brushRegion
 		end
 		print(brushRegion.name)
+	elseif key == '=' or key == '+' then
+		brushRadius = mMin(25, brushRadius + 1)
+		brush = CreateBrush(brushRadius)
+		print(brushRadius)
+	elseif key == '-' or key == '_' then
+		brushRadius = mMax(0, brushRadius - 1)
+		brush = CreateBrush(brushRadius)
+		print(brushRadius)
 	elseif key == "space" then
 		paused = not paused
-	elseif key == "f" then
-		myClimate = Climate(nil, featureRegions, myClimate)
+	-- elseif key == "f" then
+		-- myClimate = Climate(nil, featureRegions, myClimate)
 	elseif key == "up" then
 		myClimate:SetPolarExponent(myClimate.polarExponent+0.1)
 	elseif key == "down" then

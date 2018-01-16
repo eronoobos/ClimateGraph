@@ -75,6 +75,7 @@ end
 function CreateBrush(radius)
   local brush = {}
   local radiusSq = radius * radius
+  if radius > 4 then radiusSq = radiusSq - 1 end
   for x = 0, radius do
     for y = 0, radius do
       if not (y == 0 and x == 0) and x*x + y*y <= radiusSq then
