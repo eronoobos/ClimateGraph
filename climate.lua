@@ -3,17 +3,19 @@ require "graph"
 require "pixel"
 
 Climate = class(function(a, regions, subRegions, parentClimate)
-	a.temperatureMin = 1
-	a.temperatureMax = 100
+	a.temperatureMin = 0
+	a.temperatureMax = 99
 	a.polarExponent = 1.2
-	a.rainfallMidpoint = 50.5
+	a.rainfallMidpoint = 49.5
 
 	a.polarExponentMultiplier = 90 ^ a.polarExponent
-	if a.rainfallMidpoint > 50.5 then
-		a.rainfallPlusMinus = 100 - a.rainfallMidpoint
+	if a.rainfallMidpoint > 49.5 then
+		a.rainfallPlusMinus = 99 - a.rainfallMidpoint
 	else
-		a.rainfallPlusMinus = 49.5
+		a.rainfallPlusMinus = a.rainfallMidpoint
 	end
+	a.rainfallMin = a.rainfallMidpoint - a.rainfallPlusMinus
+	a.rainfallMax = a.rainfallMidpoint + a.rainfallPlusMinus
 
 	a.totalLatitudes = 91
 
@@ -31,19 +33,6 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 	a.subRegionsByCode = {}
 	a.superRegionsByCode = {}
 	a.comboRegions = {}
-	if subRegions then
-		for i, region in pairs(subRegions) do
-			region.isSub = true
-			region.area = 0
-			region.latitudeArea = 0
-			region.targetFraction = region.targetArea
-			region.targetLatitudeArea = region.targetArea * a.totalLatitudes
-			region.targetArea = region.targetArea * 10000
-			a.regionsByName[region.name] = region
-			a.subRegionsByName[region.name] = region
-			a.subRegionsByCode[region.code] = region
-		end
-	end
 	if regions then
 		for i, region in pairs(regions) do
 			region.area = 0
@@ -56,6 +45,19 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 			a.superRegionsByName[region.name] = region
 			a.superRegionsByCode[region.code] = region
 		end
+	end
+	if subRegions then
+		for i, region in pairs(subRegions) do
+			region.isSub = true
+			region.area = 0
+			region.latitudeArea = 0
+			region.targetFraction = region.targetArea
+			region.targetLatitudeArea = region.targetArea * a.totalLatitudes
+			region.targetArea = region.targetArea * 10000
+			a.regionsByName[region.name] = region
+			a.subRegionsByName[region.name] = region
+			a.subRegionsByCode[region.code] = region
+		end
 		a.graph = Graph(a, regions[1], subRegions[1])
 	elseif parentClimate then
 		a.generation = parentClimate.generation + 1
@@ -67,6 +69,19 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 			a.regionsByName[region.name] = region
 		end
 	end
+
+	for i, subRegion in pairs(subRegions) do
+		subRegion.superRegions = {}
+		local totalContainerFraction = 0
+		for ii, regionName in pairs(subRegion.containedBy) do
+			local superRegion = a.regionsByName[regionName]
+			if superRegion then
+				totalContainerFraction = totalContainerFraction + superRegion.targetFraction
+				subRegion.superRegions[superRegion] = true
+			end
+		end
+		subRegion.totalContainerFraction = totalContainerFraction
+	end
 	for i, region in pairs(a.regions) do
 		region.subRegions = {}
 		region.comboRegions = {}
@@ -74,13 +89,15 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 			local subRegion = a.regionsByName[subRegionName]
 			if subRegion then
 				region.subRegions[subRegion] = true
+				local targetFraction = (region.targetFraction / subRegion.totalContainerFraction)
 				local comboRegion = {
 					region = region,
 					subRegion = subRegion,
 					area = 0,
 					latitudeArea = 0,
-					targetArea = subRegion.targetArea / #subRegion.containedBy,
-					targetLatitudeArea = subRegion.targetLatitudeArea / #subRegion.containedBy,
+					targetFraction = targetFraction,
+					targetArea = targetFraction * subRegion.targetArea,
+					targetLatitudeArea = targetFraction * subRegion.targetLatitudeArea,
 					isCombo = true
 				}
 				tInsert(a.comboRegions, comboRegion)
@@ -88,14 +105,6 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 				if subRegionName ~= "none" then
 					a.regionsByName[region.name .. ':' .. subRegion.name] = comboRegion
 				end
-			end
-		end
-	end
-	for i, subRegion in pairs(subRegions) do
-		subRegion.superRegions = {}
-		for ii, regionName in pairs(subRegion.containedBy) do
-			if a.regionsByName[regionName] then
-				subRegion.superRegions[a.regionsByName[regionName]] = true
 			end
 		end
 	end
@@ -124,6 +133,7 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 			local r = mFloor(currentLtr.r)
 			local pixel = a.graph:PixelAt(t, r)
 			pseudoLatitudes[pseudoLatitude] = { temperature = t, rainfall = r, pixel = pixel }
+			print(t, r)
 			pixel.latitude = pseudoLatitude
 			pseudoLatitude = pseudoLatitude - 1
 		end
@@ -171,11 +181,13 @@ end
 
 function Climate:SetRainfallMidpoint(rMidpoint)
 	self.rainfallMidpoint = rMidpoint
-	if self.rainfallMidpoint > 50 then
-		self.rainfallPlusMinus = 100 - self.rainfallMidpoint
+	if self.rainfallMidpoint > 49.5 then
+		self.rainfallPlusMinus = 99 - self.rainfallMidpoint
 	else
 		self.rainfallPlusMinus = self.rainfallMidpoint
 	end
+	self.rainfallMin = self.rainfallMidpoint - self.rainfallPlusMinus
+	self.rainfallMax = self.rainfallMidpoint + self.rainfallPlusMinus
 	self:ResetLatitudes()
 end
 

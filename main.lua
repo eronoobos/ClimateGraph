@@ -130,7 +130,7 @@ function love.keyreleased(key)
 			love.system.setClipboardText( output )
 		elseif key == "s" then
 			-- save grid to file
-			local success = love.filesystem.write( "grid.lua", output )
+			local success = love.filesystem.write( "grid.lua", "return " .. output )
 			if success then print('grid.lua written') end
 		end
 	elseif ascii >= 49 and ascii <= 57 then
@@ -187,7 +187,7 @@ function love.keyreleased(key)
 			end
 		elseif key == "v" then
 			local clipText = love.system.getClipboardText()
-			chunk = loadstring(clipText)
+			chunk = loadstring("return " .. clipText)
 		end
 		if chunk then
 			print("got chunk")

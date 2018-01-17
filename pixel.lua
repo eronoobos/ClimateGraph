@@ -26,13 +26,21 @@ function Pixel:SetRegion(region)
 	local oldComboRegion = self.region.comboRegions[self.subRegion]
 	myRegion.area = myRegion.area - 1
 	region.area = region.area + 1
-	oldComboRegion.area = oldComboRegion.area - 1
-	comboRegion.area = comboRegion.area + 1
+	if oldComboRegion then
+		oldComboRegion.area = oldComboRegion.area - 1
+	end
+	if comboRegion then
+		comboRegion.area = comboRegion.area + 1
+	end
 	if self.latitude then
 		myRegion.latitudeArea = myRegion.latitudeArea - 1
 		region.latitudeArea = region.latitudeArea + 1
-		oldComboRegion.latitudeArea = oldComboRegion.latitudeArea - 1
-		comboRegion.latitudeArea = comboRegion.latitudeArea + 1
+		if oldComboRegion then
+			oldComboRegion.latitudeArea = oldComboRegion.latitudeArea - 1
+		end
+		if comboRegion then
+			comboRegion.latitudeArea = comboRegion.latitudeArea + 1
+		end
 	end
 	if region.isSub then
 		self.subRegion = region

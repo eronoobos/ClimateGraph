@@ -4,9 +4,9 @@ require "pixel"
 Graph = class(function(a, climate, fillRegion, fillSubRegion)
 	a.climate = climate
 	local grid = {}
-	for t = 1, 100 do
+	for t = climate.temperatureMin, climate.temperatureMax do
 		local rains = {}
-		for r = 1, 100 do
+		for r = climate.rainfallMin, climate.rainfallMax do
 			local pixel = Pixel(a, t, r, fillRegion, fillSubRegion)
 			rains[r] = pixel
 		end
@@ -27,11 +27,12 @@ function Graph:PixelAt(temp, rain)
 end
 
 function Graph:Export()
-	local out = "return {\n"
-	for t, rains in ipairs(self.grid) do
-		out = out .. "\t{ " 
-		for r, pixel in ipairs(rains) do
-			out = out .. "{" .. pixel.region.code .. "," .. pixel.subRegion.code .. "}"
+	-- local out = "return {\n"
+	local out = "{\n"
+	for t, rains in pairs(self.grid) do
+		out = out .. "\t[" .. t .. "] = { " 
+		for r, pixel in pairs(rains) do
+			out = out .. "[" .. r .. "]={" .. pixel.region.code .. "," .. pixel.subRegion.code .. "}"
 			if r ~= #rains then
 				out = out .. ", "
 			end
@@ -47,8 +48,8 @@ function Graph:Export()
 end
 
 function Graph:Import(exGrid)
-	for t, rains in ipairs(exGrid) do
-		for r, p in ipairs(rains) do
+	for t, rains in pairs(exGrid) do
+		for r, p in pairs(rains) do
 			local pixel = self.grid[t][r]
 			local region = self.climate.superRegionsByCode[p[1]]
 			local subRegion = self.climate.subRegionsByCode[p[2]]
