@@ -26,13 +26,14 @@ function Graph:PixelAt(temp, rain)
 	return self.grid[temp][rain]
 end
 
-function Graph:Export()
+function Graph:Export(codeKey)
+	codeKey = codeKey or "code"
 	-- local out = "return {\n"
 	local out = "{\n"
 	for t, rains in pairs(self.grid) do
 		out = out .. "\t[" .. t .. "] = { " 
 		for r, pixel in pairs(rains) do
-			out = out .. "[" .. r .. "]={" .. pixel.region.code .. "," .. pixel.subRegion.code .. "}"
+			out = out .. "[" .. r .. "]={" .. pixel.region[codeKey] .. "," .. pixel.subRegion[codeKey] .. "}"
 			if r ~= #rains then
 				out = out .. ", "
 			end
@@ -47,12 +48,25 @@ function Graph:Export()
 	return out
 end
 
-function Graph:Import(exGrid)
+function Graph:Import(exGrid, codeKey)
+	codeKey = codeKey or "code"
 	for t, rains in pairs(exGrid) do
 		for r, p in pairs(rains) do
 			local pixel = self.grid[t][r]
-			local region = self.climate.superRegionsByCode[p[1]]
-			local subRegion = self.climate.subRegionsByCode[p[2]]
+			-- local region = self.climate.superRegionsByCode[p[1]]
+			for i, reg in pairs(self.climate.regions) do
+				if reg[codeKey] == p[1] then
+					region = reg
+					break
+				end
+			end
+			for i, subReg in pairs(self.climate.subRegions) do
+				if subReg[codeKey] == p[2] then
+					subRegion = subReg
+					break
+				end
+			end
+			-- local subRegion = self.climate.subRegionsByCode[p[2]]
 			pixel:SetRegion(region)
 			pixel:SetRegion(subRegion)
 		end
