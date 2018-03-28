@@ -49,6 +49,7 @@ function Pixel:SetRegion(region)
 		end
 	end
 	for pixel, border in pairs(self.borderPair) do
+		pixel.haveBorder[border] = nil
 		for ii, pix in pairs(border.pixels) do
 			if pix == pixel then
 				tRemove(border.pixels, ii)

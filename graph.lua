@@ -17,6 +17,8 @@ Graph = class(function(a, climate, fillRegion, fillSubRegion)
 	a.borderList = {}
 	fillRegion.area = 10000
 	fillSubRegion.area = 10000
+	local fillComboRegion = fillRegion.comboRegions[fillSubRegion]
+	fillComboRegion.area = 10000
 	fillRegion.latitudeArea = 91
 	fillSubRegion.latitudeArea = 91
 	print(fillRegion.name, fillSubRegion.name)
@@ -140,5 +142,87 @@ function Graph:RemoveBorder(border)
 			tRemove(self.borderList, i)
 			break
 		end
+	end
+end
+
+function Graph:BalanceBorder(border, privilegedRegion)
+	if not border then return end
+	if #border.pixels == 0 then return end
+	local region = privilegedRegion
+	if not region then
+		local deficit1 = border.regions[1].targetArea - border.regions[1].area
+		local deficit2 = border.regions[2].targetArea - border.regions[2].area
+		if deficit1 > deficit2 then
+			region = border.regions[1]
+		else
+			region = border.regions[2]
+		end
+	end
+	if region.isCombo then
+		local pixBuf = tDuplicate(border.pixels)
+		local pixel
+		repeat
+			pixel = tRemoveRandom(pixBuf)
+		until #pixBuf == 0 or pixel.region ~= region.region or pixel.subRegion ~= region.subRegion
+		-- print(#pixBuf, #border.pixels, pixel, "combo")
+		if pixel then
+			-- print("set pixel combo", region.name)
+			pixel:SetRegion(region.region)
+			pixel:SetRegion(region.subRegion)
+		end
+	else
+		local pixBuf = tDuplicate(border.pixels)
+		local pixel
+		repeat
+			pixel = tRemoveRandom(pixBuf)
+		until #pixBuf == 0 or (pixel.region ~= region and pixel.subRegion ~= region)
+		-- print(#pixBuf, #border.pixels, pixel)
+		if pixel then
+			-- print("set pixel", region.name)
+			pixel:SetRegion(region)
+		end
+	end
+end
+
+function Graph:BalanceOneBorder()
+	local mostImbalance = 0
+	local neediestBorder
+	local privilegedRegion
+	-- for i, border in pairs(self.borderList) do
+	-- 	local imbalance = mAbs( (border.regions[1].area - border.regions[1].targetArea) - (border.regions[2].area - border.regions[2].targetArea) )
+	-- 	if #border.pixels ~= 0 and imbalance > mostImbalance then
+	-- 		mostImbalance = imbalance
+	-- 		neediestBorder = border
+	-- 	end
+	-- end
+	for i, region in pairs(self.climate.comboRegions) do
+		local deficit = region.targetArea - region.area
+		local imbalance = deficit
+		-- print(region.name, deficit, region.targetArea, region.area)
+		if imbalance > mostImbalance then
+			if self.borders[region] then
+				mostImbalance = imbalance
+				privilegedRegion = region
+				local possibilities = {}
+				local thisBorder
+				for borderingRegion, border in pairs(self.borders[region]) do
+					if #border.pixels ~= 0 then
+						local borderingDeficit = borderingRegion.targetArea - borderingRegion.area
+						if (deficit > 0 and borderingDeficit < 0) or (deficit < 0 and borderingDeficit > 0) then
+							thisBorder = border
+							break
+						else
+							tInsert(possibilities, border)
+						end
+					end
+				end
+				neediestBorder = thisBorder or tGetRandom(possibilities)
+			end
+		end
+	end
+	-- neediestBorder = tGetRandom(self.borderList)
+	if neediestBorder then
+		-- print(neediestBorder, mostImbalance, neediestBorder.regions[1].name, neediestBorder.regions[2].name, #neediestBorder.pixels, privilegedRegion.name)
+		self:BalanceBorder(neediestBorder, privilegedRegion)
 	end
 end

@@ -122,7 +122,7 @@ local brushRegion
 local brushRadius = 4
 local brush = CreateBrush(brushRadius)
 local brushHighlight = {}
-local paused
+local paused = true
 
 function love.load()
     love.window.setMode(displayMult * 100 + 200, displayMult * 100 + 100, {resizable=false, vsync=false})
@@ -255,7 +255,12 @@ function love.mousemoved(x, y, dx, dy, istouch)
 end
 
 function love.update(dt)
-   love.window.setTitle( myClimate.iterations .. " " .. myClimate.generation .. " " .. mFloor(myClimate.distance or 0) )
+	if not paused then
+		for i = 1, 10 do
+			myClimate.graph:BalanceOneBorder()
+		end
+	end
+	love.window.setTitle( myClimate.iterations .. " " .. myClimate.generation .. " " .. mFloor(myClimate.distance or 0) )
 end
 
 function love.draw()
