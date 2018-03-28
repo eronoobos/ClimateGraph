@@ -19,7 +19,6 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 
 	a.totalLatitudes = 91
 
-	a.mutationStrength = mutationStrength + 0
 	a.iterations = 0
 	a.generation = 0
 	a.distance = 10000
@@ -35,6 +34,7 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 	a.comboRegions = {}
 	if regions then
 		for i, region in pairs(regions) do
+			region.abbreviation = string.sub(region.name, 1, 1)
 			region.area = 0
 			region.latitudeArea = 0
 			region.targetFraction = region.targetArea
@@ -48,6 +48,7 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 	end
 	if subRegions then
 		for i, region in pairs(subRegions) do
+			region.abbreviation = string.sub(region.name, 1, 1)
 			region.isSub = true
 			region.area = 0
 			region.latitudeArea = 0
@@ -58,7 +59,6 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 			a.subRegionsByName[region.name] = region
 			a.subRegionsByCode[region.code] = region
 		end
-		a.graph = Graph(a, regions[1], subRegions[1])
 	elseif parentClimate then
 		a.generation = parentClimate.generation + 1
 		a.distance = parentClimate.distance
@@ -93,6 +93,8 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 				local comboRegion = {
 					region = region,
 					subRegion = subRegion,
+					name = region.name .. "+" .. subRegion.name,
+					abbreviation = region.abbreviation .. subRegion.abbreviation,
 					area = 0,
 					latitudeArea = 0,
 					targetFraction = targetFraction,
@@ -107,6 +109,10 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 				end
 			end
 		end
+	end
+
+	if not parentClimate and regions and subRegions then
+		a.graph = Graph(a, regions[1], subRegions[1])
 	end
 
 	local protoLatitudes = {}

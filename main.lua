@@ -255,7 +255,7 @@ function love.mousemoved(x, y, dx, dy, istouch)
 end
 
 function love.update(dt)
-   love.window.setTitle( myClimate.iterations .. " " .. myClimate.generation .. " " .. mFloor(myClimate.distance or 0) .. myClimate.mutationStrength )
+   love.window.setTitle( myClimate.iterations .. " " .. myClimate.generation .. " " .. mFloor(myClimate.distance or 0) )
 end
 
 function love.draw()
@@ -307,6 +307,19 @@ function love.draw()
 	end
 	love.graphics.setColor(255, 0, 0)
 	love.graphics.print(mFloor(myClimate.distance or "nil"), 10, displayMultHundred + 70)
+	love.graphics.setColor(255, 255, 0)
+	local ii = 1
+	y = displayMultHundred + 70
+	for i, border in pairs(myClimate.graph.borderList) do
+		if #border.pixels ~= 0 then
+			love.graphics.print(border.regions[1].abbreviation .. "/" .. border.regions[2].abbreviation .. ":" .. #border.pixels, 10 + (ii * 70), y)
+			ii = ii + 1
+			if ii * 70 > displayMultHundred + 100 then
+				ii = 1
+				y = y + 15
+			end
+		end
+	end
 	love.graphics.setColor(255, 0, 255)
 	love.graphics.print("polar exponent: " .. myClimate.polarExponent .. "   minimum temperature: " .. myClimate.temperatureMin .. "   maximum temperature: " .. myClimate.temperatureMax .. "   rainfall midpoint: " .. myClimate.rainfallMidpoint, 10, displayMultHundred + 50)
 	love.graphics.print("codeKey: " .. codeKey, 10, displayMultHundred + 20)
