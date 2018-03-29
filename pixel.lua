@@ -29,13 +29,13 @@ function Pixel:SetRegion(region)
 	end
 	if region == myRegion then return end
 	local oldComboRegion = self.region.comboRegions[self.subRegion]
-	myRegion.area = myRegion.area - 1
-	region.area = region.area + 1
+	self:RemoveFromRegion(myRegion)
+	self:AddToRegion(region)
 	if oldComboRegion then
-		oldComboRegion.area = oldComboRegion.area - 1
+		self:RemoveFromRegion(oldComboRegion)
 	end
 	if comboRegion then
-		comboRegion.area = comboRegion.area + 1
+		self:AddToRegion(comboRegion)
 	end
 	self.comboRegion = comboRegion
 	if self.latitude then
@@ -48,48 +48,6 @@ function Pixel:SetRegion(region)
 			comboRegion.latitudeArea = comboRegion.latitudeArea + 1
 		end
 	end
-	for pixel, border in pairs(self.borderPair) do
-		pixel.haveBorder[border] = nil
-		for ii, pix in pairs(border.pixels) do
-			if pix == pixel then
-				tRemove(border.pixels, ii)
-				break
-			end
-		end
-		for ii, pix in pairs(border.pixels) do
-			if pix == self then
-				tRemove(border.pixels, ii)
-				break
-			end
-		end
-		pixel.borderPair[self] = nil
-	end
-	self.borderPair = {}
-	self.haveBorder = {}
-	local borderRegion = self.comboRegion or self.region
-	for t = -1, 1 do
-		for r = -1, 1 do
-			if not (t == 0 and r == 0) then
-				local nPix = self.graph:PixelAt(self.temp + t, self.rain + r)
-				if nPix then
-					local nPixBorReg = nPix.comboRegion or nPix.region
-					if nPixBorReg and nPixBorReg ~= borderRegion then
-						local border = self.graph:GetBorder(nPixBorReg, borderRegion)
-						if not self.haveBorder[border] then
-							self.haveBorder[border] = true
-							tInsert(border.pixels, self)
-						end
-						if not nPix.haveBorder[border] then
-							nPix.haveBorder[border] = true
-							tInsert(border.pixels, nPix)
-						end
-						self.borderPair[nPix] = border
-						nPix.borderPair[self] = border
-					end
-				end
-			end
-		end
-	end
 	if region.isSub then
 		self.subRegion = region
 	else
@@ -98,4 +56,21 @@ function Pixel:SetRegion(region)
 			self:SetRegion(self.climate.regionsByName["none"])
 		end
 	end
+end
+
+function Pixel:AddToRegion(region)
+	if not region then return end
+	tInsert(region.pixels, self)
+	region.area = region.area + 1
+end
+
+function Pixel:RemoveFromRegion(region)
+	if not region then return end
+	for i, pixel in pairs(region.pixels) do
+		if pixel == self then
+			tRemove(region.pixels, i)
+			break
+		end
+	end
+	region.area = region.area - 1
 end

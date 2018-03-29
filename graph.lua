@@ -13,8 +13,6 @@ Graph = class(function(a, climate, fillRegion, fillSubRegion)
 		grid[t] = rains
 	end
 	a.grid = grid
-	a.borders = {}
-	a.borderList = {}
 	fillRegion.area = 10000
 	fillSubRegion.area = 10000
 	local fillComboRegion = fillRegion.comboRegions[fillSubRegion]
@@ -113,116 +111,50 @@ function Graph:PaintRegion(region, temp, rain, brush)
 	if not region then return list end
 end
 
-function Graph:GetBorder(aRegion, bRegion)
-	local border
-	if self.borders[aRegion] then
-		border = self.borders[aRegion][bRegion]
-		if border then return border end
-	end
-	border = {
-		regions = {aRegion, bRegion},
-		pixels = {},
-	}
-	self.borders[aRegion] = self.borders[aRegion] or {}
-	self.borders[bRegion] = self.borders[bRegion] or {}
-	self.borders[aRegion][bRegion] = border
-	self.borders[bRegion][aRegion] = border
-	tInsert(self.borderList, border)
-	return border
-end
-
-function Graph:RemoveBorder(border)
-	for i, pixel in pairs(border.pixels) do
-		pixel.haveBorder[border] = nil
-	end
-	self.borders[border.regions[1]][border.regions[2]] = nil
-	self.borders[border.regions[2]][border.regions[1]] = nil
-	for i, border in pairs(self.borderList) do
-		if border == border then
-			tRemove(self.borderList, i)
-			break
-		end
-	end
-end
-
-function Graph:BalanceBorder(border, privilegedRegion)
-	if not border then return end
-	if #border.pixels == 0 then return end
-	local region = privilegedRegion
-	if not region then
-		local deficit1 = border.regions[1].targetArea - border.regions[1].area
-		local deficit2 = border.regions[2].targetArea - border.regions[2].area
-		if deficit1 > deficit2 then
-			region = border.regions[1]
-		else
-			region = border.regions[2]
-		end
-	end
-	if region.isCombo then
-		local pixBuf = tDuplicate(border.pixels)
-		local pixel
-		repeat
-			pixel = tRemoveRandom(pixBuf)
-		until #pixBuf == 0 or pixel.region ~= region.region or pixel.subRegion ~= region.subRegion
-		-- print(#pixBuf, #border.pixels, pixel, "combo")
-		if pixel then
-			-- print("set pixel combo", region.name)
-			pixel:SetRegion(region.region)
-			pixel:SetRegion(region.subRegion)
-		end
-	else
-		local pixBuf = tDuplicate(border.pixels)
-		local pixel
-		repeat
-			pixel = tRemoveRandom(pixBuf)
-		until #pixBuf == 0 or (pixel.region ~= region and pixel.subRegion ~= region)
-		-- print(#pixBuf, #border.pixels, pixel)
-		if pixel then
-			-- print("set pixel", region.name)
-			pixel:SetRegion(region)
-		end
-	end
-end
-
-function Graph:BalanceOneBorder()
+function Graph:BalanceByPixel()
+	-- find the region with the most excessive pixels
 	local mostImbalance = 0
-	local neediestBorder
-	local privilegedRegion
-	-- for i, border in pairs(self.borderList) do
-	-- 	local imbalance = mAbs( (border.regions[1].area - border.regions[1].targetArea) - (border.regions[2].area - border.regions[2].targetArea) )
-	-- 	if #border.pixels ~= 0 and imbalance > mostImbalance then
-	-- 		mostImbalance = imbalance
-	-- 		neediestBorder = border
-	-- 	end
-	-- end
+	local neediestRegion
 	for i, region in pairs(self.climate.comboRegions) do
 		local deficit = region.targetArea - region.area
-		local imbalance = deficit
+		local imbalance = -deficit
 		-- print(region.name, deficit, region.targetArea, region.area)
 		if imbalance > mostImbalance then
-			if self.borders[region] then
-				mostImbalance = imbalance
-				privilegedRegion = region
-				local possibilities = {}
-				local thisBorder
-				for borderingRegion, border in pairs(self.borders[region]) do
-					if #border.pixels ~= 0 then
-						local borderingDeficit = borderingRegion.targetArea - borderingRegion.area
-						if (deficit > 0 and borderingDeficit < 0) or (deficit < 0 and borderingDeficit > 0) then
-							thisBorder = border
-							break
-						else
-							tInsert(possibilities, border)
-						end
+			mostImbalance = imbalance
+			neediestRegion = region
+		end
+	end
+	-- find the pixel in that region with the most neighbors of another region
+	local mostOthers
+	local bestPixel
+	local bestPixelOthers
+	for i, pixel in pairs(neediestRegion.pixels) do
+		local others = 0
+		local otherPixels = {}
+		for t = -1, 1 do
+			for r = -1, 1 do
+				if not (t == 0 and r == 0) then
+					local nPix = self:PixelAt(pixel.temp + t, pixel.rain + r)
+					if nPix and (nPix.region ~= pixel.region or nPix.subRegion ~= pixel.subRegion) then
+						others = others + 1
+						tInsert(otherPixels, nPix)
 					end
 				end
-				neediestBorder = thisBorder or tGetRandom(possibilities)
+			end
+		end
+		if others ~= 0 and (not mostOthers or others > mostOthers) then
+			mostOthers = others
+			bestPixel = pixel
+			bestPixelOthers = otherPixels
+			if others >= 7 then
+				break
 			end
 		end
 	end
-	-- neediestBorder = tGetRandom(self.borderList)
-	if neediestBorder then
-		-- print(neediestBorder, mostImbalance, neediestBorder.regions[1].name, neediestBorder.regions[2].name, #neediestBorder.pixels, privilegedRegion.name)
-		self:BalanceBorder(neediestBorder, privilegedRegion)
+	-- flip the pixel to one of the nearby regions
+	if bestPixel then
+		local otherPixel = tGetRandom(bestPixelOthers)
+		bestPixel:SetRegion(otherPixel.region)
+		bestPixel:SetRegion(otherPixel.subRegion)
 	end
 end
