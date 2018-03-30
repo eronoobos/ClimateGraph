@@ -2,6 +2,7 @@ require "common"
 require "pixel"
 
 Graph = class(function(a, climate, fillRegion, fillSubRegion)
+	local pCount = 0
 	a.climate = climate
 	local grid = {}
 	for t = climate.temperatureMin, climate.temperatureMax do
@@ -9,9 +10,11 @@ Graph = class(function(a, climate, fillRegion, fillSubRegion)
 		for r = climate.rainfallMin, climate.rainfallMax do
 			local pixel = Pixel(a, t, r, fillRegion, fillSubRegion)
 			rains[r] = pixel
+			pCount = pCount + 1
 		end
 		grid[t] = rains
 	end
+	print(pCount .. " pixels on graph")
 	a.grid = grid
 	fillRegion.area = 10000
 	fillSubRegion.area = 10000
@@ -112,49 +115,49 @@ function Graph:PaintRegion(region, temp, rain, brush)
 end
 
 function Graph:BalanceByPixel()
-	-- find the region with the most excessive pixels
-	local mostImbalance = 0
-	local neediestRegion
+	-- get a region with too many or too few pixels
+	local excessive = {}
+	local regions = {}
 	for i, region in pairs(self.climate.comboRegions) do
-		local deficit = region.targetArea - region.area
-		local imbalance = -deficit
-		-- print(region.name, deficit, region.targetArea, region.area)
-		if imbalance > mostImbalance then
-			mostImbalance = imbalance
-			neediestRegion = region
+		local excess = mFloor(region.area - region.targetArea)
+		if excess > 5 then
+			excessive[region] = true
+			tInsert(regions, region)
+		elseif excess < -5 then
+			tInsert(regions, region)
 		end
 	end
+	if #regions == 0 then return end
+	local region = tGetRandom(regions)
+	local take = excessive[region]
 	-- find the pixel in that region with the most neighbors of another region
-	local mostOthers
-	local bestPixel
-	local bestPixelOthers
-	for i, pixel in pairs(neediestRegion.pixels) do
+	local pixelPairs = {}
+	for i, pixel in pairs(region.pixels) do
 		local others = 0
-		local otherPixels = {}
+		local otherCandidate
 		for t = -1, 1 do
 			for r = -1, 1 do
 				if not (t == 0 and r == 0) then
 					local nPix = self:PixelAt(pixel.temp + t, pixel.rain + r)
 					if nPix and (nPix.region ~= pixel.region or nPix.subRegion ~= pixel.subRegion) then
-						others = others + 1
-						tInsert(otherPixels, nPix)
+						-- local excess = mFloor(nPix.comboRegion.targetArea - nPix.comboRegion.area)
+						if take then -- and excess < 0 then
+							tInsert(pixelPairs, {pixel, nPix})
+						else --if not take and excess > 0 then
+							tInsert(pixelPairs, {nPix, pixel})
+						end
 					end
 				end
 			end
 		end
-		if others ~= 0 and (not mostOthers or others > mostOthers) then
-			mostOthers = others
-			bestPixel = pixel
-			bestPixelOthers = otherPixels
-			if others >= 7 then
-				break
-			end
-		end
 	end
+	if #pixelPairs == 0 then return end
+	local bestPair = tGetRandom(pixelPairs)
+	local bestPixel = bestPair[1]
+	local bestPixelOther = bestPair[2]
 	-- flip the pixel to one of the nearby regions
 	if bestPixel then
-		local otherPixel = tGetRandom(bestPixelOthers)
-		bestPixel:SetRegion(otherPixel.region)
-		bestPixel:SetRegion(otherPixel.subRegion)
+		bestPixel:SetRegion(bestPixelOther.region)
+		bestPixel:SetRegion(bestPixelOther.subRegion)
 	end
 end

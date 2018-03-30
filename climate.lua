@@ -73,16 +73,31 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 	end
 
 	for i, subRegion in pairs(subRegions) do
-		subRegion.superRegions = {}
-		local totalContainerFraction = 0
 		for ii, regionName in pairs(subRegion.containedBy) do
 			local superRegion = a.regionsByName[regionName]
 			if superRegion then
-				totalContainerFraction = totalContainerFraction + superRegion.targetFraction
+				subRegion.superRegions = subRegion.superRegions or {}
 				subRegion.superRegions[superRegion] = true
+				superRegion.subRegions = superRegion.subRegions or {}
+				superRegion.subRegions[subRegion] = true
 			end
 		end
-		subRegion.totalContainerFraction = totalContainerFraction
+	end
+	for i, region in pairs(a.regions) do
+		region.remainingArea = region.targetArea
+		for subRegion, yes in pairs(region.subRegions) do
+			local targetArea
+			if subRegion.overlapTargetArea and subRegion.overlapTargetArea[region.name] then
+				targetArea = mFloor(subRegion.overlapTargetArea[region.name] * 10000)
+				subRegion.overlapTargetArea[region.name] = targetArea
+			elseif #subRegion.containedBy == 1 then
+				targetArea = subRegion.targetArea
+			end
+			if targetArea then
+				print(region.remainingArea, targetArea, region.name, subRegion.name)
+				region.remainingArea = region.remainingArea - targetArea
+			end
+		end
 	end
 	for i, region in pairs(a.regions) do
 		region.subRegions = {}
@@ -91,7 +106,13 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 			local subRegion = a.regionsByName[subRegionName]
 			if subRegion then
 				region.subRegions[subRegion] = true
-				local targetFraction = (region.targetFraction / subRegion.totalContainerFraction)
+				local targetArea
+				if subRegion.overlapTargetArea and subRegion.overlapTargetArea[region.name] then
+					targetArea = subRegion.overlapTargetArea[region.name]
+				else
+					targetArea = mMin(region.remainingArea, subRegion.targetArea)
+				end
+				local targetFraction = targetArea / 10000
 				local comboRegion = {
 					region = region,
 					subRegion = subRegion,
@@ -101,7 +122,7 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 					pixels = {},
 					latitudeArea = 0,
 					targetFraction = targetFraction,
-					targetArea = targetFraction * subRegion.targetArea,
+					targetArea = targetArea,
 					targetLatitudeArea = targetFraction * subRegion.targetLatitudeArea,
 					isCombo = true
 				}

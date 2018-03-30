@@ -12,7 +12,7 @@ local codeKeys = {
 local codeKey = codeKeys[codeKeyKey]
 
 local terrainRegions = {
-	{ name = "grassland", dictName = "terrainGrass", code = 0, code6 = 0, targetArea = 0.36, highT = true, highR = true, noLowR = true, noLowT = true,
+	{ name = "grassland", dictName = "terrainGrass", code = 0, code6 = 0, targetArea = 0.3, highT = true, highR = true, noLowR = true, noLowT = true,
 		relations = {
 			-- plains = {t = 1, r = 1},
 			desert = {t = -1, r = 1},
@@ -22,7 +22,7 @@ local terrainRegions = {
 		remainderString = "features = { featureNone, featureForest, featureJungle, featureMarsh, featureFallout }",
 		color = {0, 127, 0}
 	},
-	{ name = "plains", dictName = "terrainPlains", code = 1, code6 = 3, targetArea = 0.26, noLowT = true, noLowR = true,
+	{ name = "plains", dictName = "terrainPlains", code = 1, code6 = 3, targetArea = 0.3, noLowT = true, noLowR = true,
 		relations = {
 			-- grassland = {t = -1, r = -1},
 			desert = {r = 1},
@@ -32,7 +32,7 @@ local terrainRegions = {
 		remainderString = "features = { featureNone, featureForest, featureFallout }",
 		color = {127, 127, 0}
 	},
-	{ name = "desert", dictName = "terrainDesert", code = 2, code6 = 6, targetArea = 0.195, lowR = true, noHighR = true,
+	{ name = "desert", dictName = "terrainDesert", code = 2, code6 = 6, targetArea = 0.15, lowR = true, noHighR = true,
 		relations = {
 			plains = {r = -1},
 			tundra = {t = 1},
@@ -42,7 +42,7 @@ local terrainRegions = {
 		remainderString = "features = { featureNone, featureOasis, featureFallout }, specialFeature = featureOasis",
 		color = {127, 127, 63}
 	},
-	{ name = "tundra", dictName = "terrainTundra", code = 3, code6 = 9, targetArea = 0.13, contiguous = true, noHighT = true,
+	{ name = "tundra", dictName = "terrainTundra", code = 3, code6 = 9, targetArea = 0.15, contiguous = true, noHighT = true,
 		relations = {
 			desert = {t = -1},
 			plains = {t = -1},
@@ -53,7 +53,7 @@ local terrainRegions = {
 		remainderString = "features = { featureNone, featureForest, featureFallout }",
 		color = {63, 63, 63}
 	},
-	{ name = "snow", dictName = "terrainSnow", code = 4, code6 = 12, targetArea = 0.065, lowT = true, contiguous = true, noHighT = true,
+	{ name = "snow", dictName = "terrainSnow", code = 4, code6 = 12, targetArea = 0.1, lowT = true, contiguous = true, noHighT = true,
 		subRegionNames = {"none"},
 		remainderString = "features = { featureNone, featureFallout }",
 		relations = {
@@ -67,20 +67,25 @@ local terrainRegions = {
 -- 
 
 local featureRegions = {
-	{ name = "none", dictName = "featureNone", code = -1, code6 = -1, targetArea = 0.73,
+	{ name = "none", dictName = "featureNone", code = -1, code6 = -1, targetArea = 0.75,
 		relations = {},
 		containedBy = { "grassland", "plains", "desert", "tundra", "snow" },
 		dontEqualizeSuperAreas = true,
 		remainderString = "percent = 100, limitRatio = -1, hill = true",
 		color = {255, 255, 255, 0}
 	},
-	{ name = "forest", dictName = "featureForest", code = 5, code6 = 3, targetArea = 0.17, highR = true, noLowR = true,
+	{ name = "forest", dictName = "featureForest", code = 5, code6 = 3, targetArea = 0.19, highR = true, noLowR = true,
 		relations = {},
 		containedBy = { "grassland", "plains", "tundra" },
+		overlapTargetArea = {
+			grassland = 0.07,
+			plains = 0.09,
+			tundra = 0.03,
+		},
 		remainderString = "percent = 100, limitRatio = 0.85, hill = true",
 		color = {0, 127, 127, 255}
 	},
-	{ name = "jungle", dictName = "featureJungle", code = 1, code6 = 2, targetArea = 0.1, highR = true, highT = true, noLowR = true, noLowT = true,
+	{ name = "jungle", dictName = "featureJungle", code = 1, code6 = 2, targetArea = 0.06, highR = true, highT = true, noLowR = true, noLowT = true,
 		containedBy = { "grassland" },
 		remainderString = "percent = 100, limitRatio = 0.85, hill = true, terrainType = terrainPlains",
 		relations = {},
@@ -287,7 +292,9 @@ function love.draw()
 		love.graphics.rectangle("line", x, y, displayMult, displayMult)
 	end
 	local y = 0
-	for name, region in pairs(myClimate.regionsByName) do
+	-- for name, region in pairs(myClimate.regionsByName) do
+	for i, region in pairs(myClimate.comboRegions) do
+		local name = region.name
 		if brushRegion == region then
 			love.graphics.setColor( 255, 255, 255 )
 		elseif region.isCombo then
