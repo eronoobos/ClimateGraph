@@ -114,6 +114,46 @@ function Graph:PaintRegion(region, temp, rain, brush)
 	if not region then return list end
 end
 
+local neighbors = {{t=-1, r=0}}
+
+function Graph:BalanceOnePixel()
+	local pixel
+	local others
+	local i = 0
+	repeat
+		pixel = tGetRandom(tGetRandom(self.grid))
+		others = {}
+		local excess = mFloor(pixel.comboRegion.area - pixel.comboRegion.targetArea)
+		if excess > 2 then
+			for t = -1, 1, 2 do
+				local nPix = self:PixelAt(pixel.temp + t, pixel.rain)
+				if nPix and (nPix.region ~= pixel.region or nPix.subRegion ~= pixel.subRegion) then
+					tInsert(others, nPix)
+				end
+			end
+			for r = -1, 1, 2 do
+				local nPix = self:PixelAt(pixel.temp, pixel.rain + r)
+				if nPix and (nPix.region ~= pixel.region or nPix.subRegion ~= pixel.subRegion) then
+					tInsert(others, nPix)
+				end
+			end
+		end
+		i = i + 1
+	until (pixel and #others ~= 0) or i > 300
+	if not pixel or #others == 0 then return end
+	local leastExcess
+	local bestOther
+	for i, nPix in pairs(others) do
+		local excess = mFloor(nPix.comboRegion.area - nPix.comboRegion.targetArea)
+		if not leastExcess or excess < leastExcess then
+			leastExcess = excess
+			bestOther = nPix
+		end
+	end
+	pixel:SetRegion(bestOther.region)
+	pixel:SetRegion(bestOther.subRegion)
+end
+
 function Graph:BalanceByPixel()
 	-- get a region with too many or too few pixels
 	local excessive = {}
@@ -132,27 +172,42 @@ function Graph:BalanceByPixel()
 	local take = excessive[region]
 	-- find the pixel in that region with the most neighbors of another region
 	local pixelPairs = {}
+	local pixelPairs7 = {}
+	local pixelPairs8 = {}
 	for i, pixel in pairs(region.pixels) do
 		local others = 0
-		local otherCandidate
+		local takePairs = {}
 		for t = -1, 1 do
 			for r = -1, 1 do
 				if not (t == 0 and r == 0) then
 					local nPix = self:PixelAt(pixel.temp + t, pixel.rain + r)
 					if nPix and (nPix.region ~= pixel.region or nPix.subRegion ~= pixel.subRegion) then
-						-- local excess = mFloor(nPix.comboRegion.targetArea - nPix.comboRegion.area)
-						if take then -- and excess < 0 then
-							tInsert(pixelPairs, {pixel, nPix})
-						else --if not take and excess > 0 then
-							tInsert(pixelPairs, {nPix, pixel})
+						if t == 0 or r == 0 then
+							if take then -- and excess < 0 then
+								tInsert(takePairs, {pixel, nPix})
+							else --if not take and excess > 0 then
+								tInsert(pixelPairs, {nPix, pixel})
+							end
 						end
+						others = others + 1
 					end
 				end
 			end
 		end
+		if #takePairs ~= 0 then
+			local ppTable = pixelPairs
+			if others == 8 then
+				ppTable = pixelPairs8
+			elseif others == 7 then
+				ppTable = pixelPairs7
+			end
+			for ii, pair in pairs(takePairs) do
+				tInsert(ppTable, pair)
+			end
+		end
 	end
-	if #pixelPairs == 0 then return end
-	local bestPair = tGetRandom(pixelPairs)
+	if #pixelPairs == 0 and #pixelPairs7 == 0 and #pixelPairs8 == 0 then return end
+	local bestPair = tGetRandom(pixelPairs8) or tGetRandom(pixelPairs7) or tGetRandom(pixelPairs)
 	local bestPixel = bestPair[1]
 	local bestPixelOther = bestPair[2]
 	-- flip the pixel to one of the nearby regions

@@ -12,7 +12,7 @@ local codeKeys = {
 local codeKey = codeKeys[codeKeyKey]
 
 local terrainRegions = {
-	{ name = "grassland", dictName = "terrainGrass", code = 0, code6 = 0, targetArea = 0.3, highT = true, highR = true, noLowR = true, noLowT = true,
+	{ name = "grassland", dictName = "terrainGrass", code = 0, code6 = 0, targetArea = 0.35, highT = true, highR = true, noLowR = true, noLowT = true,
 		relations = {
 			-- plains = {t = 1, r = 1},
 			desert = {t = -1, r = 1},
@@ -32,7 +32,7 @@ local terrainRegions = {
 		remainderString = "features = { featureNone, featureForest, featureFallout }",
 		color = {127, 127, 0}
 	},
-	{ name = "desert", dictName = "terrainDesert", code = 2, code6 = 6, targetArea = 0.15, lowR = true, noHighR = true,
+	{ name = "desert", dictName = "terrainDesert", code = 2, code6 = 6, targetArea = 0.13, lowR = true, noHighR = true,
 		relations = {
 			plains = {r = -1},
 			tundra = {t = 1},
@@ -42,7 +42,7 @@ local terrainRegions = {
 		remainderString = "features = { featureNone, featureOasis, featureFallout }, specialFeature = featureOasis",
 		color = {127, 127, 63}
 	},
-	{ name = "tundra", dictName = "terrainTundra", code = 3, code6 = 9, targetArea = 0.15, contiguous = true, noHighT = true,
+	{ name = "tundra", dictName = "terrainTundra", code = 3, code6 = 9, targetArea = 0.12, contiguous = true, noHighT = true,
 		relations = {
 			desert = {t = -1},
 			plains = {t = -1},
@@ -74,12 +74,12 @@ local featureRegions = {
 		remainderString = "percent = 100, limitRatio = -1, hill = true",
 		color = {255, 255, 255, 0}
 	},
-	{ name = "forest", dictName = "featureForest", code = 5, code6 = 3, targetArea = 0.19, highR = true, noLowR = true,
+	{ name = "forest", dictName = "featureForest", code = 5, code6 = 3, targetArea = 0.17, highR = true, noLowR = true,
 		relations = {},
 		containedBy = { "grassland", "plains", "tundra" },
 		overlapTargetArea = {
-			grassland = 0.07,
-			plains = 0.09,
+			grassland = 0.06,
+			plains = 0.08,
 			tundra = 0.03,
 		},
 		remainderString = "percent = 100, limitRatio = 0.85, hill = true",
