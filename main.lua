@@ -10,6 +10,8 @@ local codeKeys = {
 	"code6",
 }
 local codeKey = codeKeys[codeKeyKey]
+local mouseT, mouseR = 0, 0
+local mouseX, mouseY = 0, 0
 
 local terrainRegions = {
 	{ name = "grassland", dictName = "terrainGrass", code = 0, code6 = 0, targetArea = 0.35, highT = true, highR = true, noLowR = true, noLowT = true,
@@ -67,7 +69,7 @@ local terrainRegions = {
 -- 
 
 local featureRegions = {
-	{ name = "none", dictName = "featureNone", code = -1, code6 = -1, targetArea = 0.75,
+	{ name = "none", dictName = "featureNone", code = -1, code6 = -1, targetArea = 0.77,
 		relations = {},
 		containedBy = { "grassland", "plains", "desert", "tundra", "snow" },
 		dontEqualizeSuperAreas = true,
@@ -209,7 +211,7 @@ function love.keyreleased(key)
 			local grid = chunk()
 			if grid then
 				print("got grid table")
-				myClimate.graph:Import(grid)
+				myClimate.graph:Import(grid, codeKey)
 			end
 		end
 	elseif key == "g" then
@@ -257,6 +259,8 @@ function love.mousemoved(x, y, dx, dy, istouch)
 		myClimate.graph:PaintRegion(brushRegion, t, r, brush)
 		-- local pressT, pressR = DisplayToGrid(mousePress[button].x, mousePress[button].y)
 	end
+	mouseT, mouseR = t, r
+	mouseX, mouseY = x, y
 end
 
 function love.update(dt)
@@ -291,6 +295,8 @@ function love.draw()
 		love.graphics.setColor( 0, 0, 0 )
 		love.graphics.rectangle("line", x, y, displayMult, displayMult)
 	end
+	love.graphics.setColor( 255, 255, 255 )
+	love.graphics.print(mouseT .. "," .. mouseR, mouseX, mouseY-12)
 	local y = 0
 	-- for name, region in pairs(myClimate.regionsByName) do
 	for i, region in pairs(myClimate.comboRegions) do
