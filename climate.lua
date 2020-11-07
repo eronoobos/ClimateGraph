@@ -126,11 +126,13 @@ Climate = class(function(a, regions, subRegions, parentClimate)
 					targetLatitudeArea = targetFraction * subRegion.targetLatitudeArea,
 					isCombo = true
 				}
-				tInsert(a.comboRegions, comboRegion)
-				region.comboRegions[subRegion] = comboRegion
 				if subRegionName ~= "none" then
 					a.regionsByName[region.name .. ':' .. subRegion.name] = comboRegion
+				else
+					comboRegion.name = region.name
 				end
+				tInsert(a.comboRegions, comboRegion)
+				region.comboRegions[subRegion] = comboRegion
 			end
 		end
 	end

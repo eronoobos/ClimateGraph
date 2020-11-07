@@ -22,7 +22,7 @@ local terrainRegions = {
 		},
 		subRegionNames = {"none", "forest", "jungle", "marsh"},
 		remainderString = "features = { featureNone, featureForest, featureJungle, featureMarsh, featureFallout }",
-		color = {0, 127, 0}
+		color = {0.06, 0.54, 0.2}
 	},
 	{ name = "plains", dictName = "terrainPlains", code = 1, code6 = 3, targetArea = 0.3, noLowT = true, noLowR = true,
 		relations = {
@@ -32,7 +32,7 @@ local terrainRegions = {
 		},
 		subRegionNames = {"none", "forest"},
 		remainderString = "features = { featureNone, featureForest, featureFallout }",
-		color = {127, 127, 0}
+		color = {0.43, 0.49, 0.2}
 	},
 	{ name = "desert", dictName = "terrainDesert", code = 2, code6 = 6, targetArea = 0.13, lowR = true, noHighR = true,
 		relations = {
@@ -42,7 +42,7 @@ local terrainRegions = {
 		},
 		subRegionNames = {"none", "oasis"},
 		remainderString = "features = { featureNone, featureOasis, featureFallout }, specialFeature = featureOasis",
-		color = {127, 127, 63}
+		color = {0.51, 0.46, 0.33}
 	},
 	{ name = "tundra", dictName = "terrainTundra", code = 3, code6 = 9, targetArea = 0.12, contiguous = true, noHighT = true,
 		relations = {
@@ -53,7 +53,7 @@ local terrainRegions = {
 		},
 		subRegionNames = {"none", "forest"},
 		remainderString = "features = { featureNone, featureForest, featureFallout }",
-		color = {63, 63, 63}
+		color = {0.45, 0.45, 0.60}
 	},
 	{ name = "snow", dictName = "terrainSnow", code = 4, code6 = 12, targetArea = 0.1, lowT = true, contiguous = true, noHighT = true,
 		subRegionNames = {"none"},
@@ -62,7 +62,7 @@ local terrainRegions = {
 			tundra = {t = -1},
 			plains = {n = -1},
 		},
-		color = {127, 127, 127}
+		color = {0.46, 0.46, 0.46}
 	},
 }
 
@@ -74,7 +74,7 @@ local featureRegions = {
 		containedBy = { "grassland", "plains", "desert", "tundra", "snow" },
 		dontEqualizeSuperAreas = true,
 		remainderString = "percent = 100, limitRatio = -1, hill = true",
-		color = {255, 255, 255, 0}
+		color = {1, 1, 1, 0}
 	},
 	{ name = "forest", dictName = "featureForest", code = 5, code6 = 3, targetArea = 0.17, highR = true, noLowR = true,
 		relations = {},
@@ -85,13 +85,13 @@ local featureRegions = {
 			tundra = 0.03,
 		},
 		remainderString = "percent = 100, limitRatio = 0.85, hill = true",
-		color = {0, 127, 127, 255}
+		color = {0.01, 0.34, 0.34, 1}
 	},
 	{ name = "jungle", dictName = "featureJungle", code = 1, code6 = 2, targetArea = 0.06, highR = true, highT = true, noLowR = true, noLowT = true,
 		containedBy = { "grassland" },
 		remainderString = "percent = 100, limitRatio = 0.85, hill = true, terrainType = terrainPlains",
 		relations = {},
-		color = {0, 0, 127, 255}
+		color = {0.03, 0.3, 0.65, 1}
 	},
 	--[[
 	{ name = "marsh", targetArea = 0.02, highR = true,
@@ -111,17 +111,6 @@ local featureRegions = {
 		color = {255, 0, 0, 127}
 	},
 	]]--
-}
-
-nullFeatureRegions = {
-	{ name = "none", targetArea = 1.0,
-		points = {
-			{t = 50, r = 50},
-		},
-		relations = {},
-		containedBy = { "grassland", "plains", "desert", "tundra", "snow" },
-		color = {255, 255, 255, 0}
-	},
 }
 
 local myClimate
@@ -284,9 +273,9 @@ function love.draw()
 			love.graphics.rectangle("fill", x, y, displayMultHalf, displayMultHalf)
 			love.graphics.rectangle("fill", x+displayMultHalf, y+displayMultHalf, displayMultHalf, displayMultHalf)
 			if pixel.latitude then
-				love.graphics.setColor( 127, 0, 0 )
+				love.graphics.setColor( 1, 0, 0 )
 				love.graphics.rectangle("fill", x+displayMultHalf, y, displayMultHalf, displayMultHalf)
-				love.graphics.rectangle("fill", x, y+displayMultHalf, displayMultHalf, displayMultHalf)
+				-- love.graphics.rectangle("fill", x, y+displayMultHalf, displayMultHalf, displayMultHalf)
 			end
 		end
 	end
@@ -295,20 +284,29 @@ function love.draw()
 		love.graphics.setColor( 0, 0, 0 )
 		love.graphics.rectangle("line", x, y, displayMult, displayMult)
 	end
-	love.graphics.setColor( 255, 255, 255 )
+	local y = 2
+	-- draw brush legend
+	love.graphics.setColor( 1, 1, 1 )
 	love.graphics.print(mouseT .. "," .. mouseR, mouseX, mouseY-12)
-	local y = 0
-	-- for name, region in pairs(myClimate.regionsByName) do
+	love.graphics.setColor( 1, 1, 1 )
+	love.graphics.print(brushRegion.name, displayMultHundred+70, 0)
+	love.graphics.setColor(brushRegion.color)
+	if brushRegion.isSub then
+		love.graphics.rectangle("fill", displayMultHundred+25, y, 15, 15)
+		love.graphics.rectangle("fill", displayMultHundred+25+15, y+15, 15, 15)
+	else
+		love.graphics.rectangle("fill", displayMultHundred+25, y, 30, 30)
+	end
+	love.graphics.setColor( 1, 1, 1 )
+	love.graphics.rectangle("line", displayMultHundred+25, y, 30, 30)
+	y = 52
+	-- draw legend
 	for i, region in pairs(myClimate.comboRegions) do
 		local name = region.name
-		if brushRegion == region then
-			love.graphics.setColor( 255, 255, 255 )
-		elseif region.isCombo then
-			love.graphics.setColor( 255, 127, 127 )
-		elseif region.isSub then
-			love.graphics.setColor( 255, 127, 255 )
+		if brushRegion == region.region or brushRegion == region.subRegion then
+			love.graphics.setColor( 1, 1, 1 )
 		else
-			love.graphics.setColor( 127, 255, 255 )
+			love.graphics.setColor( 0.54, 0.54, 0.54 )
 		end
 		love.graphics.print(name .. "\n" .. (region.latitudeArea or "nil") .. "/" .. mCeil(region.targetLatitudeArea) .. "\n" .. (region.area or "nil") .. "/" .. mFloor(region.targetArea) .. "\n", displayMultHundred+70, y)
 		if region.isCombo then
@@ -323,9 +321,9 @@ function love.draw()
 		end
 		y = y + 50
 	end
-	love.graphics.setColor(255, 0, 0)
+	love.graphics.setColor(1, 0, 0)
 	love.graphics.print(mFloor(myClimate.distance or "nil"), 10, displayMultHundred + 70)
-	love.graphics.setColor(255, 0, 255)
+	love.graphics.setColor(1, 0, 1)
 	love.graphics.print("polar exponent: " .. myClimate.polarExponent .. "   minimum temperature: " .. myClimate.temperatureMin .. "   maximum temperature: " .. myClimate.temperatureMax .. "   rainfall midpoint: " .. myClimate.rainfallMidpoint, 10, displayMultHundred + 50)
 	love.graphics.print("codeKey: " .. codeKey, 10, displayMultHundred + 20)
 	love.graphics.setColor(0, 0, 0)
