@@ -306,7 +306,7 @@ function love.draw()
 		if brushRegion == region.region or brushRegion == region.subRegion then
 			love.graphics.setColor( 1, 1, 1 )
 		else
-			love.graphics.setColor( 0.54, 0.54, 0.54 )
+			love.graphics.setColor( 0.72, 0.72, 0.72 )
 		end
 		love.graphics.print(name .. "\n" .. (region.latitudeArea or "nil") .. "/" .. mCeil(region.targetLatitudeArea) .. "\n" .. (region.area or "nil") .. "/" .. mFloor(region.targetArea) .. "\n", displayMultHundred+70, y)
 		if region.isCombo then
