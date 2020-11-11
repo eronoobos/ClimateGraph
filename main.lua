@@ -4,7 +4,7 @@ require "climate"
 -- Map Script: ocean 16	coast 15	grass 0	plains 3	desert 6	tundra 9	snow 12	
 -- Map Script: none -1	forest 3	jungle 2	
 
-local codeKeyKey = 1
+local codeKeyKey = 2
 local codeKeys = {
 	"code",
 	"code6",
@@ -22,7 +22,7 @@ local terrainRegions = {
 		},
 		subRegionNames = {"none", "forest", "jungle", "marsh"},
 		remainderString = "features = { featureNone, featureForest, featureJungle, featureMarsh, featureFallout }",
-		color = {0.06, 0.54, 0.2}
+		color = {0, 0.44, 0.1}
 	},
 	{ name = "plains", dictName = "terrainPlains", code = 1, code6 = 3, targetArea = 0.3, noLowT = true, noLowR = true,
 		relations = {
@@ -42,7 +42,7 @@ local terrainRegions = {
 		},
 		subRegionNames = {"none", "oasis"},
 		remainderString = "features = { featureNone, featureOasis, featureFallout }, specialFeature = featureOasis",
-		color = {0.51, 0.46, 0.33}
+		color = {0.62, 0.56, 0.42}
 	},
 	{ name = "tundra", dictName = "terrainTundra", code = 3, code6 = 9, targetArea = 0.12, contiguous = true, noHighT = true,
 		relations = {
@@ -53,7 +53,7 @@ local terrainRegions = {
 		},
 		subRegionNames = {"none", "forest"},
 		remainderString = "features = { featureNone, featureForest, featureFallout }",
-		color = {0.45, 0.45, 0.60}
+		color = {0.36, 0.36, 0.51}
 	},
 	{ name = "snow", dictName = "terrainSnow", code = 4, code6 = 12, targetArea = 0.1, lowT = true, contiguous = true, noHighT = true,
 		subRegionNames = {"none"},
@@ -62,7 +62,7 @@ local terrainRegions = {
 			tundra = {t = -1},
 			plains = {n = -1},
 		},
-		color = {0.46, 0.46, 0.46}
+		color = {0.57, 0.57, 0.57}
 	},
 }
 
@@ -85,13 +85,13 @@ local featureRegions = {
 			tundra = 0.03,
 		},
 		remainderString = "percent = 100, limitRatio = 0.85, hill = true",
-		color = {0.01, 0.34, 0.34, 1}
+		color = {0, 0.32, 0.28, 1}
 	},
 	{ name = "jungle", dictName = "featureJungle", code = 1, code6 = 2, targetArea = 0.06, highR = true, highT = true, noLowR = true, noLowT = true,
 		containedBy = { "grassland" },
 		remainderString = "percent = 100, limitRatio = 0.85, hill = true, terrainType = terrainPlains",
 		relations = {},
-		color = {0.03, 0.3, 0.65, 1}
+		color = {0, 0.23, 0.04, 1}
 	},
 	--[[
 	{ name = "marsh", targetArea = 0.02, highR = true,

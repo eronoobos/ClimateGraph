@@ -224,6 +224,17 @@ function Climate:SetRainfallMidpoint(rMidpoint)
 end
 
 function Climate:ResetLatitudes()
+	print(self.pseudoLatitudes, #self.pseudoLatitudes)
+	local foundCount = 0
+	for pseudoLatitude, trp in pairs(self.pseudoLatitudes) do
+		local pixel = trp.pixel or self.graph:PixelAt(trp.temperature, trp.rainfall)
+		if pixel then
+			pixel.latitude = nil
+			self.graph.grid[trp.temperature][trp.rainfall].latitude = nil
+			foundCount = foundCount + 1
+		end
+	end
+	print(foundCount)
 	self.pseudoLatitudes = nil
 	local pseudoLatitudes
 	local minDist = 3.33
@@ -249,7 +260,13 @@ function Climate:ResetLatitudes()
 			end
 			if not goodLtrs[currentLtr] then
 				goodLtrs[currentLtr] = true
-				pseudoLatitudes[pseudoLatitude] = { temperature = mFloor(currentLtr.t), rainfall = mFloor(currentLtr.r) }
+				local t = mFloor(currentLtr.t)
+				local r = mFloor(currentLtr.r)
+				local pixel = self.graph:PixelAt(t, r)
+				if pixel then
+					pixel.latitude = pseudoLatitude
+				end
+				pseudoLatitudes[pseudoLatitude] = { temperature = t, rainfall = r, pixel = pixel }
 				pseudoLatitude = pseudoLatitude - 1
 			end
 		end
